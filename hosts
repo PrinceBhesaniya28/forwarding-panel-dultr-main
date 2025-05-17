@@ -1,0 +1,2 @@
+[servers]
+68.183.181.86 ansible_user=root ansible_password=AsterisK@090Server ansible_ssh_common_args='-o StrictHostKeyChecking=no'

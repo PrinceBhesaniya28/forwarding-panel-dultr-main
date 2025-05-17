@@ -1,0 +1,39 @@
+---
+- name: Deploy Frontend App with PM2
+  hosts: all
+  become: yes
+  vars:
+    ansible_user: root
+    ansible_password: 'AsterisK@090Server'
+    remote_dir: '/home/frontend'
+
+  tasks:
+    - name: Ensure the /home/frontend directory exists
+      file:
+        path: '{{ remote_dir }}'
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Copy frontend project files to the server (excluding node_modules)
+      synchronize:
+        src: './'
+        dest: '{{ remote_dir }}'
+        rsync_opts:
+          - '--exclude=node_modules'
+
+    - name: Install Node.js dependencies
+      command: npm install
+      args:
+        chdir: '{{ remote_dir }}'
+
+    - name: Build the frontend application
+      command: npm run build
+      args:
+        chdir: '{{ remote_dir }}'
+
+    - name: Restart all PM2 applications
+      command: pm2 restart all
+      args:
+        chdir: '{{ remote_dir }}'
