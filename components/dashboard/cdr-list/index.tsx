@@ -68,7 +68,9 @@ export default function CdrList(props: Props) {
             Cdr?.disposition === 'FAILED' || 
             Cdr?.disposition === 'CONCURRENCY FULL' || 
             Cdr?.disposition === 'NO ANSWER' || 
-            Cdr?.disposition === 'BUSY'
+            Cdr?.disposition === 'BUSY' ||
+            Cdr?.disposition === 'IN_QUEUE_CC_FULL' ||
+            Cdr?.disposition === 'ROUTE UNAVAILABLE'
           )?.length,
           todayCdrs: Cdrs?.filter(Cdr => {
             // Today is calculated from 4:30 PM yesterday to 4:30 PM today

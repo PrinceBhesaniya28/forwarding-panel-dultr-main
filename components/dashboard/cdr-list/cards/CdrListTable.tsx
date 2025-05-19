@@ -263,6 +263,8 @@ export default function CdrListTable(props: { refreshData: () => void }) {
       case 'FAILED':
       case 'CONCURRENCY FULL':
         return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      case 'IN_QUEUE_CC_FULL':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
     }
@@ -280,8 +282,10 @@ export default function CdrListTable(props: { refreshData: () => void }) {
         return 'Failed';
       case 'CONCURRENCY FULL':
         return 'Concurrency Full';
+      case 'IN_QUEUE_CC_FULL':
+        return 'In-Queue | CC Full';
       default:
-        return disposition;
+        return 'Unknown';
     }
   };
 
