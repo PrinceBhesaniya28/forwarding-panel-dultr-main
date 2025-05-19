@@ -8,13 +8,15 @@ import AreaChartComponent from '@/components/charts/AreaChart';
 import BarChartComponent from '@/components/charts/BarChart';
 import DashboardLayout from '@/components/layout';
 import { Database } from '@/types/types_db';
-import { User } from '@supabase/supabase-js';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 import {
   HiChartBar,
   HiUsers,
   HiOutlineWallet,
   HiOutlineCurrencyDollar
 } from 'react-icons/hi2';
+import { checkBalance, calculateRequiredBalance, type BalanceCheck } from '@/utils/balance-monitor';
+import LowBalanceWarning from './cards/LowBalanceWarning';
 
 type Subscription = Database['public']['Tables']['subscriptions']['Row'];
 type Product = Database['public']['Tables']['products']['Row'];
@@ -29,8 +31,13 @@ interface SubscriptionWithProduct extends Subscription {
   prices: PriceWithProduct | null;
 }
 
+interface ExtendedUser extends SupabaseUser {
+  balance?: number;
+  callRate?: number;
+}
+
 interface Props {
-  user: User | null | undefined;
+  user: ExtendedUser | null | undefined;
   products: ProductWithPrices[];
   subscription: SubscriptionWithProduct | null | any;
   userDetails: { [x: string]: any } | null | any;
@@ -44,6 +51,7 @@ export default function Settings(props: Props) {
   const [lifetimeCalls, setLifetimeCalls] = useState<string>("Loading...");
   const [lifetimeCredits, setLifetimeCredits] = useState<string>("Loading...");
   const [refreshInterval, setRefreshInterval] = useState<number>(5000); // 5 seconds default
+  const [balanceCheck, setBalanceCheck] = useState<BalanceCheck | null>(null);
 
   // Get today's date range
   const getTodayDateRange = () => {
@@ -302,6 +310,19 @@ export default function Settings(props: Props) {
     return () => clearInterval(intervalId);
   }, [fetchCreditsUsed, fetchLifetimeCreditsUsed, refreshInterval]);
 
+  const handleAddFunds = () => {
+    // Implement add funds functionality
+    window.location.href = '/billing';
+  };
+
+  useEffect(() => {
+    if (props.user?.balance !== undefined && props.user?.callRate) {
+      const requiredBalance = calculateRequiredBalance(props.user.callRate, 60); // Estimate for 1 hour
+      const check = checkBalance(props.user.balance, requiredBalance);
+      setBalanceCheck(check);
+    }
+  }, [props.user?.balance, props.user?.callRate]);
+
   return (
     <DashboardLayout
       userDetails={props.userDetails}
@@ -311,6 +332,15 @@ export default function Settings(props: Props) {
       title="Dashboard"
       description="Monitor your system activity"
     >
+      <div className="space-y-4">
+        {balanceCheck?.shouldShowWarning && (
+          <LowBalanceWarning
+            currentBalance={balanceCheck.currentBalance}
+            requiredBalance={balanceCheck.requiredBalance}
+            onAddFunds={handleAddFunds}
+          />
+        )}
+      </div>
       <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
         <div className="h-full">
           <Statistics
