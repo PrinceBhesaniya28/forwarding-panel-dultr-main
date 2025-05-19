@@ -144,7 +144,7 @@ export function EditModal({ campaign, onClose, onSave }: EditModalProps) {
     targetNumber: '',
     dailyCap: true,
     dailyCapValue: 10,
-    priority: 5,
+    priority: 1,
     concurrency: 6
   });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -228,7 +228,7 @@ export function EditModal({ campaign, onClose, onSave }: EditModalProps) {
       targetNumber: '',
       dailyCap: true,
       dailyCapValue: 10,
-      priority: 5,
+      priority: 1,
       concurrency: 6
     });
   };
@@ -662,7 +662,7 @@ export function CreateModal({ isOpen, onClose, onCreate }: CreateModalProps) {
     targetNumber: '',
     dailyCap: true,
     dailyCapValue: 10,
-    priority: 5,
+    priority: 1,
     concurrency: 6
   });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -755,7 +755,7 @@ export function CreateModal({ isOpen, onClose, onCreate }: CreateModalProps) {
       targetNumber: '',
       dailyCap: true,
       dailyCapValue: 10,
-      priority: 5,
+      priority: 1,
       concurrency: 6
     });
   };

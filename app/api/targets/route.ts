@@ -55,7 +55,7 @@ export async function POST(request: Request) {
       dailyCapValue: body.dailyCapValue,
       concurrency: body.concurrency,
       dialDuration: body.dialDuration || 30,
-      assignedTo: body.assignedTo || '' // Add assigned user field
+      assignedTo: body.assignedTo || ''
     };
     
     // Add auth token to request options
@@ -104,7 +104,7 @@ export async function PUT(request: Request) {
       dailyCapValue: body.dailyCapValue,
       concurrency: body.concurrency,
       dialDuration: body.dialDuration || 30,
-      assignedTo: body.assignedTo || '', // Add assigned user field
+      assignedTo: body.assignedTo || '',
       status: body.status
     };
     
