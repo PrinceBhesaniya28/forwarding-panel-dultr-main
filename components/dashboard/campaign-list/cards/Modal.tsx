@@ -702,10 +702,18 @@ export function CreateModal({ isOpen, onClose, onCreate }: CreateModalProps) {
           // The API returns the users directly as an array
           console.log(`Found ${result.length} users in direct array`);
           setUsers(result);
+          // Automatically select the first user if available
+          if (result.length > 0) {
+            setFormData(prev => ({ ...prev, createdBy: result[0].id }));
+          }
         } else if (result.data && Array.isArray(result.data)) {
           // Fallback if API returns { data: [...] }
           console.log(`Found ${result.data.length} users in result.data`);
           setUsers(result.data);
+          // Automatically select the first user if available
+          if (result.data.length > 0) {
+            setFormData(prev => ({ ...prev, createdBy: result.data[0].id }));
+          }
         } else {
           console.error('Expected users array but got:', result);
         }
