@@ -35,7 +35,7 @@ export async function GET(request: Request) {
     
     const result = await response.json();
     
-    // Pass through the backend response exactly as received
+    // Pass through the backend response - line type is already stored in the database
     return NextResponse.json(result);
   } catch (error) {
     console.error('Error fetching CDR records:', error);

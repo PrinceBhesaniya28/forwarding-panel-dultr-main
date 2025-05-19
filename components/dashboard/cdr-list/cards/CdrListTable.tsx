@@ -43,6 +43,7 @@ export type CdrRecord = {
   callDisposition: string | null;
   identity: string | null;
   callerFrom: string | null;
+  lineType: string | null;
 };
 
 // Format duration in seconds to a readable format
@@ -286,6 +287,7 @@ export default function CdrListTable(props: { refreshData: () => void }) {
     const headers = [
       'Date & Time',
       'Source Number',
+      'Line Type',
       'Call From',
       'User Name',
       'User Email',
@@ -300,6 +302,7 @@ export default function CdrListTable(props: { refreshData: () => void }) {
     const rows = filteredRecords.map(record => [
       new Date(record.calldate).toLocaleString(),
       record.src,
+      record.lineType || 'Unknown',
       callerLocations[record.src] || 'Unknown',
       record.userName || 'N/A',
       record.userEmail || 'N/A',
@@ -382,6 +385,11 @@ export default function CdrListTable(props: { refreshData: () => void }) {
                 </TableHead>
                 <TableHead className="cursor-pointer border-zinc-200 pl-5 pr-4 pt-2 text-start dark:border-zinc-800">
                   <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                    Line Type
+                  </p>
+                </TableHead>
+                <TableHead className="cursor-pointer border-zinc-200 pl-5 pr-4 pt-2 text-start dark:border-zinc-800">
+                  <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
                     Call From
                   </p>
                 </TableHead>
@@ -459,6 +467,15 @@ export default function CdrListTable(props: { refreshData: () => void }) {
                       <p className="text-sm font-medium text-zinc-900 dark:text-white">
                         {record.src}
                       </p>
+                    </TableCell>
+                    <TableCell className="w-max border-b-[1px] border-zinc-200 py-5 pl-5 pr-4 dark:border-white/10">
+                      <span className={`py-1 px-2 rounded-full text-xs font-medium ${
+                        record.lineType === 'voip' 
+                          ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                          : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                      }`}>
+                        {record.lineType || 'Unknown'}
+                      </span>
                     </TableCell>
                     <TableCell className="w-max border-b-[1px] border-zinc-200 py-5 pl-5 pr-4 dark:border-white/10">
                       <p className="text-sm font-medium text-zinc-900 dark:text-white">
