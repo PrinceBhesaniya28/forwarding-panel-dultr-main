@@ -49,16 +49,17 @@ type User = {
 export type TargetRecord = {
   id?: number;
   targetNumber: string;
-  campaignId?: number;
+  campaignId: number;
   campaignName: string;
-  priority?: number;
-  dailyCap?: number;
+  assignedTo: string;
+  priority: number;
+  dailyCap: boolean;
   dailyCapValue: number;
   concurrency: number;
-  dialDuration?: number;
+  dialDuration: number;
   today: number;
   currentConcurrency: number;
-  status?: number; // Added status field: 1 for enabled, 0 for disabled
+  status: number;
 };
 
 interface EditModalProps {
@@ -310,6 +311,7 @@ export function AddTargetModal({ isOpen, onClose, onAdd, campaigns }: AddTargetM
   const [priority, setPriority] = useState<number>(1);
   const [dailyCap, setDailyCap] = useState<number>(1);
   const [dialDuration, setDialDuration] = useState<number>(30); // Default 30 seconds
+  const [assignedTo, setAssignedTo] = useState<string>(''); // Add assigned user state
 
   // Update campaign name when campaign id changes
   const handleCampaignChange = (id: string) => {
@@ -338,7 +340,8 @@ export function AddTargetModal({ isOpen, onClose, onAdd, campaigns }: AddTargetM
       dailyCapValue,
       concurrency,
       dialDuration,
-      currentConcurrency: 0
+      currentConcurrency: 0,
+      assignedTo // Add assigned user to the target
     };
     
     onAdd(newTarget);
@@ -351,7 +354,7 @@ export function AddTargetModal({ isOpen, onClose, onAdd, campaigns }: AddTargetM
     setConcurrency(1);
     setPriority(1);
     setDailyCap(1);
-    setDialDuration(30);
+    setAssignedTo(''); // Reset assigned user
   };
 
   return (
@@ -393,6 +396,19 @@ export function AddTargetModal({ isOpen, onClose, onAdd, campaigns }: AddTargetM
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="grid gap-2">
+            <label htmlFor="assigned-to" className="text-sm font-medium">
+              Assigned To
+            </label>
+            <Input
+              id="assigned-to"
+              value={assignedTo}
+              onChange={(e) => setAssignedTo(e.target.value)}
+              className="dark:border-zinc-700"
+              placeholder="Enter assigned user"
+            />
           </div>
           
           <div className="grid grid-cols-2 gap-4">
@@ -483,6 +499,7 @@ export function EditTargetModal({ target, onClose, onSave, campaigns }: EditTarg
   const [priority, setPriority] = useState<number>(1);
   const [dailyCap, setDailyCap] = useState<number>(1);
   const [dialDuration, setDialDuration] = useState<number>(30); // Default 30 seconds
+  const [assignedTo, setAssignedTo] = useState<string>(''); // Add assigned user state
 
   // Initialize form with target data when it changes
   useEffect(() => {
@@ -495,6 +512,7 @@ export function EditTargetModal({ target, onClose, onSave, campaigns }: EditTarg
       setPriority(target.priority || 1);
       setDailyCap(target.dailyCap || 1);
       setDialDuration(target.dialDuration || 30);
+      setAssignedTo(target.assignedTo || ''); // Initialize assigned user
     }
   }, [target]);
 
@@ -525,6 +543,7 @@ export function EditTargetModal({ target, onClose, onSave, campaigns }: EditTarg
       dailyCapValue,
       concurrency,
       dialDuration,
+      assignedTo // Add assigned user to the target
     };
     
     onSave(updatedTarget);
@@ -569,6 +588,19 @@ export function EditTargetModal({ target, onClose, onSave, campaigns }: EditTarg
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="grid gap-2">
+            <label htmlFor="edit-assigned-to" className="text-sm font-medium">
+              Assigned To
+            </label>
+            <Input
+              id="edit-assigned-to"
+              value={assignedTo}
+              onChange={(e) => setAssignedTo(e.target.value)}
+              className="dark:border-zinc-700"
+              placeholder="Enter assigned user"
+            />
           </div>
           
           <div className="grid grid-cols-2 gap-4">

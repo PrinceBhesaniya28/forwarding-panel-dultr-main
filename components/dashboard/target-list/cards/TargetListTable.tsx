@@ -453,20 +453,17 @@ export default function TargetListTable(props: { refreshData: () => void }) {
                   <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Campaign Name</p>
                 </TableHead>
                 <TableHead className="border-zinc-200 pl-5 pr-4 pt-2 text-start dark:border-zinc-800">
+                  <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Assigned To</p>
+                </TableHead>
+                <TableHead className="border-zinc-200 pl-5 pr-4 pt-2 text-start dark:border-zinc-800">
                   <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Daily Cap</p>
                 </TableHead>
                 <TableHead className="border-zinc-200 pl-5 pr-4 pt-2 text-start dark:border-zinc-800">
                   <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Concurrency</p>
                 </TableHead>
-                {/* <TableHead className="border-zinc-200 pl-5 pr-4 pt-2 text-start dark:border-zinc-800">
-                  <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Today&apos;s Progress</p>
-                </TableHead> */}
                 <TableHead className="border-zinc-200 pl-12 pt-2 text-start dark:border-zinc-800">
                   <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Actions</p>
                 </TableHead>
-                {/* <TableHead className="border-zinc-200 pl-5 pr-4 pt-2 text-start dark:border-zinc-800">
-                  <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Enable/Disable</p>
-                </TableHead> */}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -492,16 +489,14 @@ export default function TargetListTable(props: { refreshData: () => void }) {
                       <p className="text-sm font-medium text-zinc-900 dark:text-white">{target.campaignName}</p>
                     </TableCell>
                     <TableCell className="w-max border-b-[1px] border-zinc-200 py-5 pl-5 pr-4 dark:border-white/10">
+                      <p className="text-sm font-medium text-zinc-900 dark:text-white">{target.assignedTo || 'N/A'}</p>
+                    </TableCell>
+                    <TableCell className="w-max border-b-[1px] border-zinc-200 py-5 pl-5 pr-4 dark:border-white/10">
                       <p className="text-sm font-medium text-zinc-900 dark:text-white">{target.today || 0}/{target.dailyCapValue}</p>
                     </TableCell>
                     <TableCell className="w-max border-b-[1px] border-zinc-200 py-5 pl-5 pr-4 dark:border-white/10">
                       <p className="text-sm font-medium text-zinc-900 dark:text-white">{target.currentConcurrency}/{target.concurrency}</p>
                     </TableCell>
-                    {/* <TableCell className="w-max border-b-[1px] border-zinc-200 py-5 pl-5 pr-4 dark:border-white/10">
-                      <p className="text-sm font-medium text-zinc-900 dark:text-white">
-                        {Math.round(calculateProgress(target.today, target.dailyCapValue))}%
-                      </p>
-                    </TableCell> */}
                     <TableCell className="w-max border-b-[1px] border-zinc-200 py-5 pl-5 pr-4 dark:border-white/10">
                       <div className="flex items-center gap-2">
                         <Button
@@ -517,7 +512,6 @@ export default function TargetListTable(props: { refreshData: () => void }) {
                           size="icon"
                           className="h-8 w-8 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
                           onClick={() => {
-                            // Use target.id if available, otherwise use target.targetNumber
                             const idToDelete = target.id ? target.id.toString() : target.targetNumber;
                             openDeleteDialog(idToDelete);
                           }}
@@ -529,7 +523,6 @@ export default function TargetListTable(props: { refreshData: () => void }) {
                           size="icon"
                           className="h-8 w-8 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
                           onClick={() => {
-                            // Use target.id if available, otherwise use target.targetNumber
                             const idToReset = target.id ? target.id.toString() : target.targetNumber;
                             handleResetTarget(idToReset);
                           }}
@@ -540,25 +533,12 @@ export default function TargetListTable(props: { refreshData: () => void }) {
                           checked={target.status === 1}
                           style={{ height: '20px' }}
                           onCheckedChange={(checked) => {
-                            // Use target.id if available, otherwise use target.targetNumber
                             const idToToggle = target.id ? target.id.toString() : target.targetNumber;
                             handleToggleStatus(idToToggle, checked);
                           }}
                         />
                       </div>
                     </TableCell>
-                    {/* <TableCell className="w-max border-b-[1px] border-zinc-200 py-5 pl-5 pr-4 dark:border-white/10">
-                      <div className="flex items-center justify-center">
-                        <Switch 
-                          checked={target.status === 1}
-                          onCheckedChange={(checked) => {
-                            // Use target.id if available, otherwise use target.targetNumber
-                            const idToToggle = target.id ? target.id.toString() : target.targetNumber;
-                            handleToggleStatus(idToToggle, checked);
-                          }}
-                        />
-                      </div>
-                    </TableCell> */}
                   </TableRow>
                 ))
               )}
