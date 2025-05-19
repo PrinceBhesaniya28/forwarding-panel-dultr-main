@@ -261,6 +261,7 @@ export default function CdrListTable(props: { refreshData: () => void }) {
       case 'BUSY':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
       case 'FAILED':
+      case 'CONCURRENCY FULL':
         return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
@@ -277,6 +278,8 @@ export default function CdrListTable(props: { refreshData: () => void }) {
         return 'Busy';
       case 'FAILED':
         return 'Failed';
+      case 'CONCURRENCY FULL':
+        return 'Concurrency Full';
       default:
         return disposition;
     }

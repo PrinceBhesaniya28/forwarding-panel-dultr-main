@@ -64,7 +64,12 @@ export default function CdrList(props: Props) {
         const stats = {
           totalCdrs: Cdrs?.length,
           answeredCdrs: Cdrs?.filter(Cdr => Cdr?.disposition === 'ANSWERED')?.length,
-          unansweredCdrs: Cdrs?.filter(Cdr => Cdr?.disposition !== 'ANSWERED')?.length,
+          unansweredCdrs: Cdrs?.filter(Cdr => 
+            Cdr?.disposition === 'FAILED' || 
+            Cdr?.disposition === 'CONCURRENCY FULL' || 
+            Cdr?.disposition === 'NO ANSWER' || 
+            Cdr?.disposition === 'BUSY'
+          )?.length,
           todayCdrs: Cdrs?.filter(Cdr => {
             // Today is calculated from 4:30 PM yesterday to 4:30 PM today
             const callDate = new Date(Cdr?.calldate);
