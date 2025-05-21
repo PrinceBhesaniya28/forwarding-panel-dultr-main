@@ -34,7 +34,6 @@ type User = {
   id: number;
   name: string;
   email: string;
-  password: string;
   role: string;
 };
 
@@ -272,44 +271,72 @@ export function SearchModal({ isOpen, onClose, onSearch }: SearchModalProps) {
   const [dst, setDst] = useState('');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Fetch users from the API
   useEffect(() => {
     if (isOpen) {
       const fetchUsers = async () => {
         try {
-          console.log('Fetching users...');
+          setIsLoading(true);
+          console.log('Starting to fetch users...');
           const authToken = localStorage.getItem('auth_token');
           
-          const response = await fetch(`/api/users/`, {
+          if (!authToken) {
+            console.error('No auth token found in localStorage');
+            toast({
+              title: "Error",
+              description: "Authentication token not found. Please log in again.",
+              variant: "destructive"
+            });
+            return;
+          }
+
+          console.log('Making request to /api/users/list');
+          const response = await fetch(`/api/users/list`, {
             headers: {
               'Authorization': `Bearer ${authToken}`,
               'Content-Type': 'application/json'
             }
           });
           
+          console.log('Response status:', response.status);
           const result = await response.json();
           console.log('Users API response:', result);
   
-          if (Array.isArray(result)) {
-            // The API returns the users directly as an array
-            console.log(`Found ${result.length} users in direct array`);
-            setUsers(result);
-          } else if (result.data && Array.isArray(result.data)) {
-            // Fallback if API returns { data: [...] }
-            console.log(`Found ${result.data.length} users in result.data`);
-            setUsers(result.data);
+          if (result.success && Array.isArray(result.data)) {
+            console.log(`Found ${result.data.length} users:`, result.data);
+            // Map the users to ensure they have the correct structure
+            const mappedUsers = result.data.map((user: any) => ({
+              id: user.id || user.userid,
+              name: user.name || user.username || 'Unknown',
+              email: user.email || 'No email',
+              role: user.role || 'user'
+            }));
+            setUsers(mappedUsers);
           } else {
-            console.error('Expected users array but got:', result);
+            console.error('Failed to fetch users:', result.message);
+            toast({
+              title: "Error",
+              description: result.message || "Failed to load users. Please try again.",
+              variant: "destructive"
+            });
           }
         } catch (error) {
           console.error('Failed to fetch users:', error);
+          toast({
+            title: "Error",
+            description: "Failed to load users. Please try again.",
+            variant: "destructive"
+          });
+        } finally {
+          setIsLoading(false);
         }
       };
   
       fetchUsers();
     }
-  }, [isOpen]);
+  }, [isOpen, toast]);
   
   const handleSearch = () => {
     // Validate date range
@@ -359,6 +386,7 @@ export function SearchModal({ isOpen, onClose, onSearch }: SearchModalProps) {
               value={userid}
               onChange={(e) => setUserid(e.target.value)}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+              disabled={isLoading}
             >
               <option value="">Select a user</option>
               {users.map((user) => (
@@ -367,6 +395,11 @@ export function SearchModal({ isOpen, onClose, onSearch }: SearchModalProps) {
                 </option>
               ))}
             </select>
+            {isLoading && (
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                Loading users...
+              </p>
+            )}
           </div>
           
           <div className="grid grid-cols-2 gap-4">

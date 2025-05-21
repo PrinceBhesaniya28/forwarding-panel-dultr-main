@@ -65,6 +65,7 @@ type Campaign = {
   campaignId?: number;
   type: 'roundrobin' | 'dupe';
   status: boolean;
+  voipBehavior: boolean;
 };
 
 interface EditModalProps {
@@ -437,6 +438,28 @@ export function EditModal({ campaign, onClose, onSave }: EditModalProps) {
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <label htmlFor="voipBehavior" className="text-sm font-medium">
+                  VoIP Behavior
+                </label>
+                <div className="flex items-center space-x-2 pt-2">
+                  <Switch
+                    id="voipBehavior"
+                    checked={formData?.voipBehavior ?? true}
+                    onCheckedChange={(checked) =>
+                      setFormData(
+                        formData ? { ...formData, voipBehavior: checked } : null
+                      )
+                    }
+                  />
+                  <label htmlFor="voipBehavior" className="text-sm font-medium">
+                    {formData?.voipBehavior ? 'Reject VoIP Calls' : 'Allow VoIP Calls'}
+                  </label>
+                </div>
+              </div>
+            </div>
+
             <div className="grid gap-2">
               <label htmlFor="createdBy" className="text-sm font-medium">
                 Created By User
@@ -653,7 +676,8 @@ export function CreateModal({ isOpen, onClose, onCreate }: CreateModalProps) {
     createdBy: 1,
     targets: [],
     type: 'roundrobin',
-    status: true
+    status: true,
+    voipBehavior: true
   });
   const [users, setUsers] = useState<User[]>([]);
   const { phoneNumbers, isLoading: phoneNumbersLoading } = usePhoneNumbers();
@@ -677,7 +701,8 @@ export function CreateModal({ isOpen, onClose, onCreate }: CreateModalProps) {
         createdBy: 1,
         targets: [],
         type: 'roundrobin',
-        status: true
+        status: true,
+        voipBehavior: true
       });
     }
   }, [isOpen]);
@@ -978,6 +1003,29 @@ export function CreateModal({ isOpen, onClose, onCreate }: CreateModalProps) {
                     className="text-sm font-medium"
                   >
                     {formData.status ? 'Active' : 'Inactive'}
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <label htmlFor="create-voipBehavior" className="text-sm font-medium">
+                  VoIP Behavior
+                </label>
+                <div className="flex items-center space-x-2 pt-2">
+                  <Switch
+                    id="create-voipBehavior"
+                    checked={formData.voipBehavior}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, voipBehavior: checked })
+                    }
+                  />
+                  <label
+                    htmlFor="create-voipBehavior"
+                    className="text-sm font-medium"
+                  >
+                    {formData.voipBehavior ? 'Reject VoIP Calls' : 'Allow VoIP Calls'}
                   </label>
                 </div>
               </div>

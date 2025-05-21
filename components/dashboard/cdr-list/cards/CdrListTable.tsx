@@ -82,11 +82,24 @@ export default function CdrListTable(props: { refreshData: () => void }) {
     if (callerLocations[phoneNumber]) return callerLocations[phoneNumber];
     
     try {
-      const response = await fetch(`https://www.ipqualityscore.com/api/json/phone/iJ0xwvNFu14hn5Z6NIISK61TCq6iJZ7R/${phoneNumber}?strictness=1`);
+      console.log('Fetching location for:', phoneNumber);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
+      const response = await fetch(`/api/phone-location?phone=${phoneNumber}`, {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`API responded with status: ${response.status}`);
+      }
+      
       const data = await response.json();
+      console.log('Location API response:', data);
       
       if (data && data.success) {
-        const location = `${data.city}, ${data.region}`;
+        const location = `${data.city.toUpperCase()}, ${data.region_code}`;
         setCallerLocations(prev => ({...prev, [phoneNumber]: location}));
         return location;
       }
@@ -122,6 +135,7 @@ export default function CdrListTable(props: { refreshData: () => void }) {
         if (result.success) {
           // Get all the records
           const allRecords = result.data || [];
+          console.log('CDR Records:', allRecords); // Debug log
 
           // Fetch caller locations for all records
           allRecords.forEach(record => {
