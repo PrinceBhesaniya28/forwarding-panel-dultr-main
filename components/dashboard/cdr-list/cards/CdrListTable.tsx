@@ -299,7 +299,7 @@ export default function CdrListTable(props: { refreshData: () => void }) {
       case 'IN_QUEUE_CC_FULL':
         return 'In-Queue | CC Full';
       default:
-        return 'Unknown';
+        return 'ROUTE UNAVAILABLE';
     }
   };
 
