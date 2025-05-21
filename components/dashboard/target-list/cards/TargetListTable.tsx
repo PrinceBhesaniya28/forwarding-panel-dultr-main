@@ -458,8 +458,15 @@ export default function TargetListTable(props: { refreshData: () => void }) {
                 <TableHead className="border-zinc-200 pl-5 pr-4 pt-2 text-start dark:border-zinc-800">
                   <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Daily Cap</p>
                 </TableHead>
-                <TableHead className="border-zinc-200 pl-5 pr-4 pt-2 text-start dark:border-zinc-800">
-                  <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Concurrency</p>
+                <TableHead className="cursor-pointer border-zinc-200 pl-5 pr-4 pt-2 text-start dark:border-zinc-800">
+                  <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                    Concurrency
+                  </p>
+                </TableHead>
+                <TableHead className="cursor-pointer border-zinc-200 pl-5 pr-4 pt-2 text-start dark:border-zinc-800">
+                  <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                    VoIP Behavior
+                  </p>
                 </TableHead>
                 <TableHead className="border-zinc-200 pl-12 pt-2 text-start dark:border-zinc-800">
                   <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Actions</p>
@@ -495,7 +502,18 @@ export default function TargetListTable(props: { refreshData: () => void }) {
                       <p className="text-sm font-medium text-zinc-900 dark:text-white">{target.today || 0}/{target.dailyCapValue}</p>
                     </TableCell>
                     <TableCell className="w-max border-b-[1px] border-zinc-200 py-5 pl-5 pr-4 dark:border-white/10">
-                      <p className="text-sm font-medium text-zinc-900 dark:text-white">{target.currentConcurrency}/{target.concurrency}</p>
+                      <p className="text-sm font-medium text-zinc-900 dark:text-white">
+                        {target.concurrency}
+                      </p>
+                    </TableCell>
+                    <TableCell className="w-max border-b-[1px] border-zinc-200 py-5 pl-5 pr-4 dark:border-white/10">
+                      <span className={`py-1 px-2 rounded-full text-xs font-medium ${
+                        target.voipBehavior === 'reject' 
+                          ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                          : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                      }`}>
+                        {target.voipBehavior === 'reject' ? 'Reject Calls' : 'Accept Calls'}
+                      </span>
                     </TableCell>
                     <TableCell className="w-max border-b-[1px] border-zinc-200 py-5 pl-5 pr-4 dark:border-white/10">
                       <div className="flex items-center gap-2">

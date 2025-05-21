@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 type User = {
   id: number;
@@ -47,19 +48,19 @@ type User = {
 
 // Target type for use in the AddTargetModal
 export type TargetRecord = {
-  id?: number;
+  id?: string;
   targetNumber: string;
-  campaignId: number;
-  campaignName: string;
-  assignedTo: string;
+  campaignId: string;
+  campaignName?: string;
+  assignedTo?: string;
   priority: number;
-  dailyCap: boolean;
+  dailyCap: number;
   dailyCapValue: number;
   concurrency: number;
   dialDuration: number;
-  today: number;
-  currentConcurrency: number;
+  today?: number;
   status: number;
+  voipBehavior: boolean;
 };
 
 interface EditModalProps {
@@ -303,58 +304,45 @@ export function CreateModal({ isOpen, onClose, onCreate }: CreateModalProps) {
 }
 
 export function AddTargetModal({ isOpen, onClose, onAdd, campaigns }: AddTargetModalProps) {
-  const [targetNumber, setTargetNumber] = useState('');
-  const [campaignId, setCampaignId] = useState<number | undefined>(undefined);
-  const [campaignName, setCampaignName] = useState('');
-  const [dailyCapValue, setDailyCapValue] = useState<number>(10);
-  const [concurrency, setConcurrency] = useState<number>(1);
-  const [priority, setPriority] = useState<number>(1);
-  const [dailyCap, setDailyCap] = useState<number>(1);
-  const [dialDuration, setDialDuration] = useState<number>(30); // Default 30 seconds
-  const [assignedTo, setAssignedTo] = useState<string>(''); // Add assigned user state
-
-  // Update campaign name when campaign id changes
-  const handleCampaignChange = (id: string) => {
-    const campaignId = parseInt(id);
-    setCampaignId(campaignId);
-    
-    // Find the campaign name from the id
-    const campaign = campaigns.find(c => parseInt(c.id) === campaignId);
-    if (campaign) {
-      setCampaignName(campaign.name);
-    }
-  };
+  const [formData, setFormData] = useState<Omit<TargetRecord, 'today'>>({
+    targetNumber: '',
+    campaignId: '',
+    priority: 1,
+    dailyCap: 1,
+    dailyCapValue: 10,
+    concurrency: 6,
+    dialDuration: 30,
+    status: 1,
+    voipBehavior: true
+  });
 
   const handleAdd = () => {
     // Validate inputs
-    if (!targetNumber || !campaignId || dailyCapValue <= 0 || concurrency <= 0) {
+    if (!formData.targetNumber || !formData.campaignId || formData.dailyCapValue <= 0 || formData.concurrency <= 0) {
       return;
     }
     
     const newTarget: Omit<TargetRecord, 'today'> = {
-      targetNumber,
-      campaignId,
-      campaignName,
-      priority,
-      dailyCap,
-      dailyCapValue,
-      concurrency,
-      dialDuration,
+      ...formData,
+      today: new Date().getTime(),
       currentConcurrency: 0,
-      assignedTo // Add assigned user to the target
+      assignedTo: ''
     };
     
     onAdd(newTarget);
     
     // Reset form
-    setTargetNumber('');
-    setCampaignId(undefined);
-    setCampaignName('');
-    setDailyCapValue(10);
-    setConcurrency(1);
-    setPriority(1);
-    setDailyCap(1);
-    setAssignedTo(''); // Reset assigned user
+    setFormData({
+      targetNumber: '',
+      campaignId: '',
+      priority: 1,
+      dailyCap: 1,
+      dailyCapValue: 10,
+      concurrency: 6,
+      dialDuration: 30,
+      status: 1,
+      voipBehavior: true
+    });
   };
 
   return (
@@ -370,8 +358,8 @@ export function AddTargetModal({ isOpen, onClose, onAdd, campaigns }: AddTargetM
             </label>
             <Input
               id="target-number"
-              value={targetNumber}
-              onChange={(e) => setTargetNumber(e.target.value)}
+              value={formData.targetNumber}
+              onChange={(e) => setFormData({ ...formData, targetNumber: e.target.value })}
               className="dark:border-zinc-700"
               placeholder="Enter target number"
             />
@@ -382,15 +370,15 @@ export function AddTargetModal({ isOpen, onClose, onAdd, campaigns }: AddTargetM
               Campaign
             </label>
             <Select
-              value={campaignId?.toString() || ""}
-              onValueChange={handleCampaignChange}
+              value={formData.campaignId}
+              onValueChange={(value) => setFormData({ ...formData, campaignId: value })}
             >
               <SelectTrigger className="w-full dark:border-zinc-700">
                 <SelectValue placeholder="Select a campaign" />
               </SelectTrigger>
               <SelectContent>
                 {campaigns.map((campaign) => (
-                  <SelectItem key={campaign.id} value={campaign.id.toString()}>
+                  <SelectItem key={campaign.id} value={campaign.id}>
                     {campaign.name}
                   </SelectItem>
                 ))}
@@ -399,46 +387,31 @@ export function AddTargetModal({ isOpen, onClose, onAdd, campaigns }: AddTargetM
           </div>
 
           <div className="grid gap-2">
-            <label htmlFor="assigned-to" className="text-sm font-medium">
-              Assigned To
+            <label htmlFor="priority" className="text-sm font-medium">
+              Priority
             </label>
             <Input
-              id="assigned-to"
-              value={assignedTo}
-              onChange={(e) => setAssignedTo(e.target.value)}
+              id="priority"
+              type="number"
+              value={formData.priority}
+              onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) })}
+              min={1}
               className="dark:border-zinc-700"
-              placeholder="Enter assigned user"
             />
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <label htmlFor="priority" className="text-sm font-medium">
-                Priority
-              </label>
-              <Input
-                id="priority"
-                type="number"
-                value={priority}
-                onChange={(e) => setPriority(parseInt(e.target.value))}
-                min={1}
-                className="dark:border-zinc-700"
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <label htmlFor="dial-duration" className="text-sm font-medium">
-                Timeout
-              </label>
-              <Input
-                id="dial-duration"
-                type="number"
-                value={dialDuration}
-                onChange={(e) => setDialDuration(parseInt(e.target.value))}
-                min={1}
-                className="dark:border-zinc-700"
-              />
-            </div>
+          <div className="grid gap-2">
+            <label htmlFor="dial-duration" className="text-sm font-medium">
+              Timeout
+            </label>
+            <Input
+              id="dial-duration"
+              type="number"
+              value={formData.dialDuration}
+              onChange={(e) => setFormData({ ...formData, dialDuration: parseInt(e.target.value) })}
+              min={1}
+              className="dark:border-zinc-700"
+            />
           </div>
           
           <div className="grid grid-cols-2 gap-4">
@@ -449,8 +422,8 @@ export function AddTargetModal({ isOpen, onClose, onAdd, campaigns }: AddTargetM
               <Input
                 id="daily-cap-value"
                 type="number"
-                value={dailyCapValue}
-                onChange={(e) => setDailyCapValue(parseInt(e.target.value))}
+                value={formData.dailyCapValue}
+                onChange={(e) => setFormData({ ...formData, dailyCapValue: parseInt(e.target.value) })}
                 min={1}
                 className="dark:border-zinc-700"
               />
@@ -461,13 +434,32 @@ export function AddTargetModal({ isOpen, onClose, onAdd, campaigns }: AddTargetM
                 Concurrency
               </label>
               <Input
-                id="concurrency"
                 type="number"
-                value={concurrency}
-                onChange={(e) => setConcurrency(parseInt(e.target.value))}
-                min={1}
+                id="concurrency"
+                value={formData.concurrency}
+                onChange={(e) =>
+                  setFormData({ ...formData, concurrency: parseInt(e.target.value) })
+                }
                 className="dark:border-zinc-700"
               />
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <label htmlFor="voip-behavior" className="text-sm font-medium">
+              VoIP Behavior
+            </label>
+            <div className="flex items-center space-x-2 pt-2">
+              <Switch
+                id="voip-behavior"
+                checked={formData.voipBehavior}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, voipBehavior: checked })
+                }
+              />
+              <label htmlFor="voip-behavior" className="text-sm font-medium">
+                {formData.voipBehavior ? 'Reject VoIP Calls' : 'Allow VoIP Calls'}
+              </label>
             </div>
           </div>
         </div>
@@ -491,59 +483,23 @@ export function AddTargetModal({ isOpen, onClose, onAdd, campaigns }: AddTargetM
 }
 
 export function EditTargetModal({ target, onClose, onSave, campaigns }: EditTargetModalProps) {
-  const [targetNumber, setTargetNumber] = useState('');
-  const [campaignId, setCampaignId] = useState<number | undefined>(undefined);
-  const [campaignName, setCampaignName] = useState('');
-  const [dailyCapValue, setDailyCapValue] = useState<number>(10);
-  const [concurrency, setConcurrency] = useState<number>(1);
-  const [priority, setPriority] = useState<number>(1);
-  const [dailyCap, setDailyCap] = useState<number>(1);
-  const [dialDuration, setDialDuration] = useState<number>(30); // Default 30 seconds
-  const [assignedTo, setAssignedTo] = useState<string>(''); // Add assigned user state
-
-  // Initialize form with target data when it changes
-  useEffect(() => {
-    if (target) {
-      setTargetNumber(target.targetNumber);
-      setCampaignId(target.campaignId);
-      setCampaignName(target.campaignName);
-      setDailyCapValue(target.dailyCapValue);
-      setConcurrency(target.concurrency);
-      setPriority(target.priority || 1);
-      setDailyCap(target.dailyCap || 1);
-      setDialDuration(target.dialDuration || 30);
-      setAssignedTo(target.assignedTo || ''); // Initialize assigned user
-    }
-  }, [target]);
-
-  // Update campaign name when campaign id changes
-  const handleCampaignChange = (id: string) => {
-    const campaignId = parseInt(id);
-    setCampaignId(campaignId);
-    
-    // Find the campaign name from the id
-    const campaign = campaigns.find(c => parseInt(c.id) === campaignId);
-    if (campaign) {
-      setCampaignName(campaign.name);
-    }
-  };
+  const [formData, setFormData] = useState<TargetRecord>({
+    ...target,
+    today: target?.today ? new Date(target.today).getTime() : undefined,
+    status: target?.status || 1,
+    voipBehavior: target?.voipBehavior || true
+  });
 
   const handleSave = () => {
-    if (!target || !targetNumber || !campaignId || dailyCapValue <= 0 || concurrency <= 0) {
+    if (!formData || !formData.targetNumber || !formData.campaignId || formData.dailyCapValue <= 0 || formData.concurrency <= 0) {
       return;
     }
     
     const updatedTarget: TargetRecord = {
-      ...target,
-      targetNumber,
-      campaignId,
-      campaignName,
-      priority,
-      dailyCap,
-      dailyCapValue,
-      concurrency,
-      dialDuration,
-      assignedTo // Add assigned user to the target
+      ...formData,
+      today: formData.today ? new Date(formData.today).getTime() : undefined,
+      status: formData.status,
+      voipBehavior: formData.voipBehavior
     };
     
     onSave(updatedTarget);
@@ -562,8 +518,8 @@ export function EditTargetModal({ target, onClose, onSave, campaigns }: EditTarg
             </label>
             <Input
               id="edit-target-number"
-              value={targetNumber}
-              onChange={(e) => setTargetNumber(e.target.value)}
+              value={formData.targetNumber}
+              onChange={(e) => setFormData({ ...formData, targetNumber: e.target.value })}
               className="dark:border-zinc-700"
               placeholder="Enter target number"
             />
@@ -574,15 +530,15 @@ export function EditTargetModal({ target, onClose, onSave, campaigns }: EditTarg
               Campaign
             </label>
             <Select
-              value={campaignId?.toString() || ""}
-              onValueChange={handleCampaignChange}
+              value={formData.campaignId}
+              onValueChange={(value) => setFormData({ ...formData, campaignId: value })}
             >
               <SelectTrigger id="edit-campaign" className="w-full dark:border-zinc-700">
                 <SelectValue placeholder="Select a campaign" />
               </SelectTrigger>
               <SelectContent>
                 {campaigns.map((campaign) => (
-                  <SelectItem key={campaign.id} value={campaign.id.toString()}>
+                  <SelectItem key={campaign.id} value={campaign.id}>
                     {campaign.name}
                   </SelectItem>
                 ))}
@@ -591,46 +547,31 @@ export function EditTargetModal({ target, onClose, onSave, campaigns }: EditTarg
           </div>
 
           <div className="grid gap-2">
-            <label htmlFor="edit-assigned-to" className="text-sm font-medium">
-              Assigned To
+            <label htmlFor="edit-priority" className="text-sm font-medium">
+              Priority
             </label>
             <Input
-              id="edit-assigned-to"
-              value={assignedTo}
-              onChange={(e) => setAssignedTo(e.target.value)}
+              id="edit-priority"
+              type="number"
+              value={formData.priority}
+              onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) })}
+              min={1}
               className="dark:border-zinc-700"
-              placeholder="Enter assigned user"
             />
           </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <label htmlFor="edit-priority" className="text-sm font-medium">
-                Priority
-              </label>
-              <Input
-                id="edit-priority"
-                type="number"
-                value={priority}
-                onChange={(e) => setPriority(parseInt(e.target.value))}
-                min={1}
-                className="dark:border-zinc-700"
-              />
-            </div>
 
-            <div className="grid gap-2">
-              <label htmlFor="edit-dial-duration" className="text-sm font-medium">
-                Timeout
-              </label>
-              <Input
-                id="edit-dial-duration"
-                type="number"
-                value={dialDuration}
-                onChange={(e) => setDialDuration(parseInt(e.target.value))}
-                min={1}
-                className="dark:border-zinc-700"
-              />
-            </div>
+          <div className="grid gap-2">
+            <label htmlFor="edit-dial-duration" className="text-sm font-medium">
+              Timeout
+            </label>
+            <Input
+              id="edit-dial-duration"
+              type="number"
+              value={formData.dialDuration}
+              onChange={(e) => setFormData({ ...formData, dialDuration: parseInt(e.target.value) })}
+              min={1}
+              className="dark:border-zinc-700"
+            />
           </div>
           
           <div className="grid grid-cols-2 gap-4">
@@ -641,8 +582,8 @@ export function EditTargetModal({ target, onClose, onSave, campaigns }: EditTarg
               <Input
                 id="edit-daily-cap-value"
                 type="number"
-                value={dailyCapValue}
-                onChange={(e) => setDailyCapValue(parseInt(e.target.value))}
+                value={formData.dailyCapValue}
+                onChange={(e) => setFormData({ ...formData, dailyCapValue: parseInt(e.target.value) })}
                 min={1}
                 className="dark:border-zinc-700"
               />
@@ -653,13 +594,30 @@ export function EditTargetModal({ target, onClose, onSave, campaigns }: EditTarg
                 Concurrency
               </label>
               <Input
-                id="edit-concurrency"
                 type="number"
-                value={concurrency}
-                onChange={(e) => setConcurrency(parseInt(e.target.value))}
-                min={1}
+                id="edit-concurrency"
+                value={formData.concurrency}
+                onChange={(e) => setFormData({ ...formData, concurrency: parseInt(e.target.value) })}
                 className="dark:border-zinc-700"
               />
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <label htmlFor="edit-voip-behavior" className="text-sm font-medium">
+              VoIP Behavior
+            </label>
+            <div className="flex items-center space-x-2 pt-2">
+              <Switch
+                id="edit-voip-behavior"
+                checked={formData.voipBehavior}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, voipBehavior: checked })
+                }
+              />
+              <label htmlFor="edit-voip-behavior" className="text-sm font-medium">
+                {formData.voipBehavior ? 'Reject VoIP Calls' : 'Allow VoIP Calls'}
+              </label>
             </div>
           </div>
         </div>

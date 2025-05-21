@@ -54,6 +54,7 @@ type Target = {
   priority: number;
   concurrency: number;
   id?: number;
+  voipBehavior: boolean;
 };
 
 type Campaign = {
@@ -146,7 +147,8 @@ export function EditModal({ campaign, onClose, onSave }: EditModalProps) {
     dailyCap: true,
     dailyCapValue: 10,
     priority: 1,
-    concurrency: 6
+    concurrency: 6,
+    voipBehavior: true
   });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -230,7 +232,8 @@ export function EditModal({ campaign, onClose, onSave }: EditModalProps) {
       dailyCap: true,
       dailyCapValue: 10,
       priority: 1,
-      concurrency: 6
+      concurrency: 6,
+      voipBehavior: true
     });
   };
 
@@ -491,7 +494,7 @@ export function EditModal({ campaign, onClose, onSave }: EditModalProps) {
               <h3 className="text-lg font-semibold mb-3">Manage Targets</h3>
 
               {/* Target form inputs */}
-              <div className="grid grid-cols-5 gap-4 mb-4 border p-4 rounded-md dark:border-zinc-700">
+              <div className="grid grid-cols-6 gap-4 mb-4 border p-4 rounded-md dark:border-zinc-700">
                 <div className="grid gap-2">
                   <label htmlFor="targetNumber" className="text-sm font-medium">
                     Target Number
@@ -511,10 +514,7 @@ export function EditModal({ campaign, onClose, onSave }: EditModalProps) {
                 </div>
 
                 <div className="grid gap-2">
-                  <label
-                    htmlFor="dailyCapValue"
-                    className="text-sm font-medium"
-                  >
+                  <label htmlFor="dailyCapValue" className="text-sm font-medium">
                     Daily Cap Value
                   </label>
                   <Input
@@ -565,6 +565,24 @@ export function EditModal({ campaign, onClose, onSave }: EditModalProps) {
                     }
                     className="dark:border-zinc-700"
                   />
+                </div>
+
+                <div className="grid gap-2">
+                  <label htmlFor="voip-behavior" className="text-sm font-medium">
+                    VoIP Behavior
+                  </label>
+                  <div className="flex items-center space-x-2 pt-2">
+                    <Switch
+                      id="voip-behavior"
+                      checked={targetFormData.voipBehavior}
+                      onCheckedChange={(checked) =>
+                        setTargetFormData({ ...targetFormData, voipBehavior: checked })
+                      }
+                    />
+                    <label htmlFor="voip-behavior" className="text-sm font-medium">
+                      {targetFormData.voipBehavior ? 'Reject VoIP Calls' : 'Allow VoIP Calls'}
+                    </label>
+                  </div>
                 </div>
 
                 <div className="flex items-end">
@@ -687,7 +705,8 @@ export function CreateModal({ isOpen, onClose, onCreate }: CreateModalProps) {
     dailyCap: true,
     dailyCapValue: 10,
     priority: 1,
-    concurrency: 6
+    concurrency: 6,
+    voipBehavior: true
   });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -789,7 +808,8 @@ export function CreateModal({ isOpen, onClose, onCreate }: CreateModalProps) {
       dailyCap: true,
       dailyCapValue: 10,
       priority: 1,
-      concurrency: 6
+      concurrency: 6,
+      voipBehavior: true
     });
   };
 
@@ -1058,16 +1078,13 @@ export function CreateModal({ isOpen, onClose, onCreate }: CreateModalProps) {
               <h3 className="text-lg font-semibold mb-3">Manage Targets</h3>
 
               {/* Target form inputs */}
-              <div className="grid grid-cols-5 gap-4 mb-4 border p-4 rounded-md dark:border-zinc-700">
+              <div className="grid grid-cols-6 gap-4 mb-4 border p-4 rounded-md dark:border-zinc-700">
                 <div className="grid gap-2">
-                  <label
-                    htmlFor="create-targetNumber"
-                    className="text-sm font-medium"
-                  >
+                  <label htmlFor="targetNumber" className="text-sm font-medium">
                     Target Number
                   </label>
                   <Input
-                    id="create-targetNumber"
+                    id="targetNumber"
                     value={targetFormData.targetNumber}
                     onChange={(e) =>
                       setTargetFormData({
@@ -1081,15 +1098,12 @@ export function CreateModal({ isOpen, onClose, onCreate }: CreateModalProps) {
                 </div>
 
                 <div className="grid gap-2">
-                  <label
-                    htmlFor="create-dailyCapValue"
-                    className="text-sm font-medium"
-                  >
+                  <label htmlFor="dailyCapValue" className="text-sm font-medium">
                     Daily Cap Value
                   </label>
                   <Input
                     type="number"
-                    id="create-dailyCapValue"
+                    id="dailyCapValue"
                     value={targetFormData.dailyCapValue}
                     onChange={(e) =>
                       setTargetFormData({
@@ -1102,15 +1116,12 @@ export function CreateModal({ isOpen, onClose, onCreate }: CreateModalProps) {
                 </div>
 
                 <div className="grid gap-2">
-                  <label
-                    htmlFor="create-priority"
-                    className="text-sm font-medium"
-                  >
+                  <label htmlFor="priority" className="text-sm font-medium">
                     Priority
                   </label>
                   <Input
                     type="number"
-                    id="create-priority"
+                    id="priority"
                     value={targetFormData.priority}
                     onChange={(e) =>
                       setTargetFormData({
@@ -1123,15 +1134,12 @@ export function CreateModal({ isOpen, onClose, onCreate }: CreateModalProps) {
                 </div>
 
                 <div className="grid gap-2">
-                  <label
-                    htmlFor="create-concurrency"
-                    className="text-sm font-medium"
-                  >
+                  <label htmlFor="concurrency" className="text-sm font-medium">
                     Concurrency
                   </label>
                   <Input
                     type="number"
-                    id="create-concurrency"
+                    id="concurrency"
                     value={targetFormData.concurrency}
                     onChange={(e) =>
                       setTargetFormData({
@@ -1141,6 +1149,24 @@ export function CreateModal({ isOpen, onClose, onCreate }: CreateModalProps) {
                     }
                     className="dark:border-zinc-700"
                   />
+                </div>
+
+                <div className="grid gap-2">
+                  <label htmlFor="voip-behavior" className="text-sm font-medium">
+                    VoIP Behavior
+                  </label>
+                  <div className="flex items-center space-x-2 pt-2">
+                    <Switch
+                      id="voip-behavior"
+                      checked={targetFormData.voipBehavior}
+                      onCheckedChange={(checked) =>
+                        setTargetFormData({ ...targetFormData, voipBehavior: checked })
+                      }
+                    />
+                    <label htmlFor="voip-behavior" className="text-sm font-medium">
+                      {targetFormData.voipBehavior ? 'Reject VoIP Calls' : 'Allow VoIP Calls'}
+                    </label>
+                  </div>
                 </div>
 
                 <div className="flex items-end">
