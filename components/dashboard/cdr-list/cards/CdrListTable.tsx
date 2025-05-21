@@ -304,53 +304,84 @@ export default function CdrListTable(props: { refreshData: () => void }) {
   };
 
   // Download the currently filtered records as CSV
-  const downloadCSV = () => {
-    const headers = [
-      'Date & Time',
-      'Source Number',
-      'Line Type',
-      'Call From',
-      'User Name',
-      'User Email',
-      'Campaign Number',
-      'Campaign Name',
-      'Target Number',
-      'Ringing Time',
-      'Duration',
-      'Status'
-    ];
+  const downloadCSV = async () => {
+    try {
+      setIsLoading(true);
+      let dataToDownload: CdrRecord[] = [];
 
-    const rows = filteredRecords.map(record => [
-      new Date(record.calldate).toLocaleString(),
-      record.src,
-      record.lineType || 'Unknown',
-      callerLocations[record.src] || 'Unknown',
-      record.userName || 'N/A',
-      record.userEmail || 'N/A',
-      record.campaignNumber || 'N/A',
-      record.campaignName || 'N/A',
-      record.targetNumber || 'N/A',
-      formatDuration(record.ringingTime),
-      formatDuration(record.billsec),
-      record.disposition
-    ]);
+      // If there's no search query and no advanced search params, fetch all records
+      if (!searchQuery && Object.keys(searchParams).length === 0) {
+        const params = new URLSearchParams();
+        const result = await getWithAuth<CdrRecord[]>(`/api/cdr?${params.toString()}`);
+        if (result.success) {
+          dataToDownload = result.data || [];
+        }
+      } else {
+        // Use the current filtered records
+        dataToDownload = filteredRecords;
+      }
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.join(','))
-    ].join('\n');
+      const headers = [
+        'Date & Time',
+        'Source Number',
+        'Line Type',
+        'Call From',
+        'User Name',
+        'User Email',
+        'Campaign Number',
+        'Campaign Name',
+        'Target Number',
+        'Ringing Time',
+        'Duration',
+        'Status'
+      ];
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', `call_records_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      const rows = dataToDownload.map(record => [
+        new Date(record.calldate).toLocaleString(),
+        record.src,
+        record.lineType || 'Unknown',
+        callerLocations[record.src] || 'Unknown',
+        record.userName || 'N/A',
+        record.userEmail || 'N/A',
+        record.campaignNumber || 'N/A',
+        record.campaignName || 'N/A',
+        record.targetNumber || 'N/A',
+        formatDuration(record.ringingTime),
+        formatDuration(record.billsec),
+        record.disposition
+      ]);
+
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `call_records_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast({
+        title: 'Success',
+        description: `Downloaded ${dataToDownload.length} records successfully.`
+      });
+    } catch (error) {
+      console.error('Error downloading records:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to download records. Please try again.'
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -371,23 +402,24 @@ export default function CdrListTable(props: { refreshData: () => void }) {
               onClick={handleSearchClick}
             />
           </div>
-          
+        </div>
+        
+        <div className="flex gap-2">
           <Button
             onClick={downloadCSV}
-            className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:text-white dark:hover:bg-blue-700"
+            className="bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
           >
             <HiArrowDownTray className="h-4 w-4 mr-2" />
             Download
           </Button>
+          <Button
+            onClick={() => setIsSearchModalOpen(true)}
+            className="bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+          >
+            <HiMagnifyingGlassPlus className="h-4 w-4 mr-2" />
+            Advanced Search
+          </Button>
         </div>
-        
-        <Button
-          onClick={() => setIsSearchModalOpen(true)}
-          className="bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
-        >
-          <HiMagnifyingGlassPlus className="h-4 w-4 mr-2" />
-          Advanced Search
-        </Button>
       </div>
       <Card className="h-full w-full p-0 dark:border-zinc-800 sm:overflow-auto">
         <div className="overflow-x-scroll xl:overflow-x-hidden">

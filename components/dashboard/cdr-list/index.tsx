@@ -13,7 +13,8 @@ import {
   HiClock,
   HiPhoneXMark,
   HiPhoneArrowUpRight,
-  HiOutlineCpuChip
+  HiOutlineCpuChip,
+  HiChartBar
 } from 'react-icons/hi2';
 
 type Subscription = Database['public']['Tables']['subscriptions']['Row'];
@@ -149,7 +150,7 @@ export default function CdrList(props: Props) {
             }
             title="Call's Today"
             value={cdrStats?.todayCdrs}
-            info="(4:30 PM yesterday to 4:30 PM today)"
+            info=""
           />
         </div>
         {/* Conversion and tables*/}
