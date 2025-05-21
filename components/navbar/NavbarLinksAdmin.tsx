@@ -27,7 +27,6 @@ import {
 import { Input } from '../ui/input';
 import { getAuthToken } from '@/utils/auth';
 import { useToast } from '@/hooks/use-toast';
-import BalanceWarning from '../ui/balance-warning';
 
 // Constants for balance management
 const POSTPAID_LIMIT = 100; // Maximum negative balance allowed
@@ -61,16 +60,55 @@ export default function HeaderLinks() {
     if (balance < 0) {
       // Check if balance is below postpaid limit
       if (Math.abs(balance) >= POSTPAID_LIMIT) {
-        // User has reached postpaid limit, account should be disabled
+        // User has reached postpaid limit, show warning and disable after 5 minutes
+        const audio = new Audio('/sounds/error.mp3');
+        audio.volume = 0.5;
+        audio.play().catch(err => console.error('Error playing sound:', err));
+        
+        toast({
+          title: "⚠️ Account Disable Warning",
+          description: `Your account balance ($${balance.toFixed(2)}) has exceeded the postpaid limit of $${POSTPAID_LIMIT}. Your account will be disabled in 5 minutes unless you add funds.`,
+          duration: 5000,
+          variant: "destructive",
+          className: theme === 'dark' ? 'bg-white text-black' : 'bg-black text-white'
+        });
+
+        // Set timeout to disable account after 5 minutes
+        setTimeout(() => {
+          performLogout();
+        }, 5 * 60 * 1000); // 5 minutes
+
         return 'DISABLE';
       }
       // Show warning for negative balance
+      const audio = new Audio('/sounds/error.mp3');
+      audio.volume = 0.5;
+      audio.play().catch(err => console.error('Error playing sound:', err));
+      
+      toast({
+        title: "⚠️ Low Balance Warning",
+        description: `Your account balance ($${balance.toFixed(2)}) is low. Please add funds to avoid service interruption.`,
+        duration: 5000,
+        variant: "destructive",
+        className: theme === 'dark' ? 'bg-white text-black' : 'bg-black text-white'
+      });
       return 'WARNING';
     }
     
     // Check if balance is less than per-minute rate
     if (balance < minuteRate) {
       // Balance too low for calls
+      const audio = new Audio('/sounds/error.mp3');
+      audio.volume = 0.5;
+      audio.play().catch(err => console.error('Error playing sound:', err));
+      
+      toast({
+        title: "⚠️ Low Balance Warning",
+        description: `Your account balance ($${balance.toFixed(2)}) is below the required amount ($${minuteRate.toFixed(2)}). Please add funds to continue making calls.`,
+        duration: 5000,
+        variant: "destructive",
+        className: theme === 'dark' ? 'bg-white text-black' : 'bg-black text-white'
+      });
       return 'WARNING';
     }
     
@@ -258,6 +296,17 @@ export default function HeaderLinks() {
       const balanceStatus = checkBalanceStatus(numericBalance);
       if (balanceStatus === 'WARNING') {
         setShowBalanceWarning(true);
+        // Play warning sound and show toast
+        const audio = new Audio('/sounds/error.mp3');
+        audio.volume = 0.5;
+        audio.play().catch(err => console.error('Error playing sound:', err));
+        
+        toast({
+          title: "⚠️ Low Balance Warning",
+          description: `Your account balance ($${numericBalance.toFixed(2)}) is below the required amount ($${minuteRate.toFixed(2)}). Please add funds to continue making calls.`,
+          duration: 5000,
+          variant: "destructive"
+        });
       }
     }, MIN_BALANCE_CHECK_INTERVAL);
   };
@@ -394,15 +443,6 @@ export default function HeaderLinks() {
           </Avatar>
         </Link>
       </div>
-      
-      {/* Balance Warning Dialog */}
-      <BalanceWarning 
-        open={showBalanceWarning}
-        balance={numericBalance}
-        requiredBalance={minuteRate}
-        postpaidLimit={POSTPAID_LIMIT}
-        onClose={handleCloseBalanceWarning}
-      />
     </>
   );
 }

@@ -34,8 +34,17 @@ export async function GET(request: Request) {
     }
     
     const result = await response.json();
+    console.log('CDR API response:', result);
     
-    // Pass through the backend response - line type is already stored in the database
+    // Ensure user email is included in the response
+    if (result.success && Array.isArray(result.data)) {
+      result.data = result.data.map((record: any) => ({
+        ...record,
+        userEmail: record.email || record.userEmail || null
+      }));
+    }
+    
+    // Pass through the backend response
     return NextResponse.json(result);
   } catch (error) {
     console.error('Error fetching CDR records:', error);

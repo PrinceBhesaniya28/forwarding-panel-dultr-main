@@ -37,7 +37,7 @@ const BalanceWarning: React.FC<BalanceWarningProps> = ({
   
   useEffect(() => {
     // Create an audio element for notification sound
-    audioRef.current = new Audio('/sounds/notification.mp3');
+    audioRef.current = new Audio('/sounds/error.mp3');
     
     // Check if in postpaid mode
     if (balance < 0) {
