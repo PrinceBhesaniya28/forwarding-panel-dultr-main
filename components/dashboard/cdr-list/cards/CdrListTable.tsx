@@ -251,13 +251,21 @@ export default function CdrListTable(props: { refreshData: () => void }) {
         (record.campaignName && record.campaignName.toLowerCase().includes(query)) ||
         // Target number
         (record.targetNumber && record.targetNumber.toLowerCase().includes(query)) ||
-        // Call status/disposition - special handling for common terms
+        // Call status/disposition - improved handling for common terms
         (record.disposition && (
           record.disposition.toLowerCase().includes(query) ||
           (query === 'answered' && record.disposition === 'ANSWERED') ||
           (query === 'no answer' && record.disposition === 'NO ANSWER') ||
           (query === 'busy' && record.disposition === 'BUSY') ||
-          (query === 'failed' && record.disposition === 'FAILED')
+          (query === 'failed' && record.disposition === 'FAILED') ||
+          (query === 'concurrency' && record.disposition === 'CONCURRENCY FULL') ||
+          (query === 'in queue' && record.disposition === 'IN_QUEUE_CC_FULL') ||
+          (query === 'route' && record.disposition === 'ROUTE UNAVAILABLE') ||
+          // Additional common variations
+          (query === 'noanswer' && record.disposition === 'NO ANSWER') ||
+          (query === 'concurrency full' && record.disposition === 'CONCURRENCY FULL') ||
+          (query === 'in-queue' && record.disposition === 'IN_QUEUE_CC_FULL') ||
+          (query === 'route unavailable' && record.disposition === 'ROUTE UNAVAILABLE')
         )) ||
         // Date and time
         (record.calldate && new Date(record.calldate).toLocaleString().toLowerCase().includes(query))
