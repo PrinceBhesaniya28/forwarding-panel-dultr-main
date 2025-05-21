@@ -341,13 +341,41 @@ export default function Settings(props: Props) {
           />
         )}
       </div>
-      <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-5 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
         <div className="h-full">
           <Statistics
-            title="Today Calls"
+            title="Total Users"
+            value={totalUsers}
+            info="Total registered users"
+            icon={
+              <div className="flex h-14 w-14 items-center justify-center rounded-full border border-zinc-200 text-4xl dark:border-zinc-800 text-foreground dark:text-white">
+                <HiUsers className="h-5 w-5" />
+              </div>
+            }
+          />
+        </div>
+        <div className="h-full">
+          <Statistics
+            title="Credits Spent"
+            value={totalCreditsUsed}
+            info={`Credits used till now: ${lifetimeCredits}`}
+            icon={
+              <div className="flex h-14 w-14 items-center justify-center rounded-full border border-zinc-200 text-4xl dark:border-zinc-800 text-foreground dark:text-white">
+                <HiOutlineCurrencyDollar className="h-5 w-5 stroke-2" />
+              </div>
+            }
+          />
+        </div>
+        <div className="h-full">
+          <Statistics
+            title="Total Calls"
             value={totalCalls}
             info={`Calls made till now: ${lifetimeCalls}`}
-            icon={<HiChartBar className="h-8 w-8 text-zinc-700 dark:text-white" />}
+            icon={
+              <div className="flex h-14 w-14 items-center justify-center rounded-full border border-zinc-200 text-4xl dark:border-zinc-800 text-foreground dark:text-white">
+                <HiOutlineWallet className="h-5 w-5 stroke-2" />
+              </div>
+            }
           />
         </div>
         <div className="h-full">
@@ -355,23 +383,11 @@ export default function Settings(props: Props) {
             title="Live Calls"
             value={liveCalls}
             info="Currently Active"
-            icon={<HiUsers className="h-8 w-8 text-zinc-700 dark:text-white" />}
-          />
-        </div>
-        <div className="h-full">
-          <Statistics
-            title="Total Users"
-            value={totalUsers}
-            info="Total registered users"
-            icon={<HiUsers className="h-8 w-8 text-zinc-700 dark:text-white" />}
-          />
-        </div>
-        <div className="h-full">
-          <Statistics
-            title="Today Credit Spent"
-            value={totalCreditsUsed}
-            info={`Credits used till now: ${lifetimeCredits}`}
-            icon={<HiOutlineCurrencyDollar className="h-8 w-8 text-zinc-700 dark:text-white" />}
+            icon={
+              <div className="flex h-14 w-14 items-center justify-center rounded-full border border-zinc-200 text-4xl dark:border-zinc-800 text-foreground dark:text-white">
+                <HiChartBar className="h-5 w-5" />
+              </div>
+            }
           />
         </div>
       </div>
