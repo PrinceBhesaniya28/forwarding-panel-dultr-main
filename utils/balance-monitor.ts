@@ -1,4 +1,5 @@
 import { toast } from '@/hooks/use-toast';
+import { useTheme } from 'next-themes';
 
 const POSTPAID_LIMIT = 100; // $100 postpaid limit
 const WARNING_THRESHOLD = 0.1; // 10% of required balance
@@ -9,15 +10,25 @@ export interface BalanceCheck {
   requiredBalance: number;
   isPostpaid: boolean;
   shouldShowWarning: boolean;
+  warningType: 'NONE' | 'LOW_BALANCE' | 'DISABLE_WARNING';
 }
 
 let disableTimeout: NodeJS.Timeout | null = null;
+let audioRef: HTMLAudioElement | null = null;
+let lowBalanceWarningShown = false;
+
+function playWarningSound() {
+  if (!audioRef) {
+    audioRef = new Audio('/sounds/error.mp3');
+    audioRef.volume = 0.5;
+  }
+  audioRef.play().catch(err => console.error('Error playing sound:', err));
+}
 
 export function checkBalance(currentBalance: number, requiredBalance: number): BalanceCheck {
   const isPostpaid = currentBalance < 0;
   const isBelowRequired = currentBalance < requiredBalance;
   const isNearPostpaidLimit = isPostpaid && Math.abs(currentBalance) >= POSTPAID_LIMIT;
-  const shouldShowWarning = currentBalance < (requiredBalance * WARNING_THRESHOLD);
 
   // Clear any existing disable timeout
   if (disableTimeout) {
@@ -39,41 +50,70 @@ export function checkBalance(currentBalance: number, requiredBalance: number): B
       currentBalance,
       requiredBalance,
       isPostpaid: true,
-      shouldShowWarning: true
+      shouldShowWarning: true,
+      warningType: 'DISABLE_WARNING'
+    };
+  }
+
+  // If balance is negative for the first time
+  if (isPostpaid && !lowBalanceWarningShown) {
+    showLowBalanceWarning(currentBalance);
+    lowBalanceWarningShown = true;
+    return {
+      currentBalance,
+      requiredBalance,
+      isPostpaid: true,
+      shouldShowWarning: true,
+      warningType: 'LOW_BALANCE'
     };
   }
 
   // If balance is below required amount
   if (isBelowRequired) {
-    // Show warning if balance is below threshold
-    if (shouldShowWarning) {
-      showLowBalanceWarning(currentBalance, requiredBalance);
-    }
+    showLowBalanceWarning(currentBalance, requiredBalance);
+    return {
+      currentBalance,
+      requiredBalance,
+      isPostpaid,
+      shouldShowWarning: true,
+      warningType: 'LOW_BALANCE'
+    };
   }
 
   return {
     currentBalance,
     requiredBalance,
     isPostpaid,
-    shouldShowWarning
+    shouldShowWarning: false,
+    warningType: 'NONE'
   };
 }
 
-function showLowBalanceWarning(currentBalance: number, requiredBalance: number) {
+function showLowBalanceWarning(currentBalance: number, requiredBalance?: number) {
+  playWarningSound();
+  const { theme } = useTheme();
+  
   toast({
-    title: "Low Balance Warning",
-    description: `Your account balance ($${currentBalance.toFixed(2)}) is below the required amount ($${requiredBalance.toFixed(2)}). Please add funds to continue making calls.`,
+    title: "⚠️ Low Balance Warning",
+    description: requiredBalance 
+      ? `Your account balance ($${currentBalance.toFixed(2)}) is below the required amount ($${requiredBalance.toFixed(2)}). Please add funds to continue making calls.`
+      : `Your account balance ($${currentBalance.toFixed(2)}) is low. Please add funds to avoid service interruption.`,
     duration: 5000,
-    variant: "destructive"
+    variant: "destructive",
+    className: theme === 'dark' ? 'bg-white text-black' : 'bg-black text-white'
   });
 }
 
 function showDisableWarning(currentBalance: number) {
+  playWarningSound();
+  const { theme } = useTheme();
+  
   toast({
     title: "⚠️ Account Disable Warning",
     description: `Your account balance ($${currentBalance.toFixed(2)}) has exceeded the postpaid limit of $${POSTPAID_LIMIT}. Your account will be disabled in 5 minutes unless you add funds.`,
     duration: 5000,
-    variant: "destructive"
+    variant: "destructive",
+    className: theme === 'dark' ? 'bg-white text-black' : 'bg-black text-white'
   });
 }
 
@@ -90,10 +130,14 @@ async function disableUserAccount() {
       throw new Error('Failed to disable user account');
     }
 
+    playWarningSound();
+    const { theme } = useTheme();
+    
     toast({
       title: "Account Disabled",
       description: "Your account has been disabled due to exceeding the postpaid limit. Please add funds to reactivate.",
       variant: "destructive",
+      className: theme === 'dark' ? 'bg-white text-black' : 'bg-black text-white'
     });
   } catch (error) {
     console.error('Error disabling user account:', error);

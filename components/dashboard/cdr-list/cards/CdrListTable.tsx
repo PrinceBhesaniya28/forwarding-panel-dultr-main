@@ -44,6 +44,7 @@ export type CdrRecord = {
   identity: string | null;
   callerFrom: string | null;
   lineType: string | null;
+  email?: string;
 };
 
 // Format duration in seconds to a readable format
@@ -79,7 +80,15 @@ export default function CdrListTable(props: { refreshData: () => void }) {
 
   // Fetch caller location information
   const fetchCallerLocation = async (phoneNumber: string) => {
-    if (callerLocations[phoneNumber]) return callerLocations[phoneNumber];
+    if (!phoneNumber) {
+      console.warn('No phone number provided to fetchCallerLocation');
+      return 'Location Unknown';
+    }
+
+    if (callerLocations[phoneNumber]) {
+      console.log('Using cached location for:', phoneNumber, callerLocations[phoneNumber]);
+      return callerLocations[phoneNumber];
+    }
     
     try {
       console.log('Fetching location for:', phoneNumber);
@@ -92,20 +101,34 @@ export default function CdrListTable(props: { refreshData: () => void }) {
       clearTimeout(timeoutId);
       
       if (!response.ok) {
-        throw new Error(`API responded with status: ${response.status}`);
+        console.error('Location API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          phoneNumber
+        });
+        setCallerLocations(prev => ({...prev, [phoneNumber]: 'Location Unknown'}));
+        return 'Location Unknown';
       }
       
       const data = await response.json();
-      console.log('Location API response:', data);
+      console.log('Location API response for', phoneNumber, ':', data);
       
       if (data && data.success) {
-        const location = `${data.city.toUpperCase()}, ${data.region_code}`;
+        const location = data.city === 'Unknown' || data.region_code === 'Unknown'
+          ? 'Location Unknown'
+          : `${data.city.toUpperCase()}, ${data.region_code}`;
+        
+        console.log('Setting location for', phoneNumber, 'to:', location);
         setCallerLocations(prev => ({...prev, [phoneNumber]: location}));
         return location;
       }
+      
+      console.warn('Invalid location data received for', phoneNumber, ':', data);
+      setCallerLocations(prev => ({...prev, [phoneNumber]: 'Location Unknown'}));
       return 'Location Unknown';
     } catch (error) {
-      console.error('Error fetching caller location:', error);
+      console.error('Error fetching caller location for', phoneNumber, ':', error);
+      setCallerLocations(prev => ({...prev, [phoneNumber]: 'Location Unknown'}));
       return 'Location Unknown';
     }
   };
@@ -348,9 +371,9 @@ export default function CdrListTable(props: { refreshData: () => void }) {
         new Date(record.calldate).toLocaleString(),
         record.src,
         record.lineType || 'Unknown',
-        callerLocations[record.src] || 'Unknown',
+        record.callerFrom || 'N/A',
         record.userName || 'N/A',
-        record.userEmail || 'N/A',
+        record.userEmail || record.email || 'N/A',
         record.campaignNumber || 'N/A',
         record.campaignName || 'N/A',
         record.targetNumber || 'N/A',
@@ -540,7 +563,7 @@ export default function CdrListTable(props: { refreshData: () => void }) {
                     </TableCell>
                     <TableCell className="w-max border-b-[1px] border-zinc-200 py-5 pl-5 pr-4 dark:border-white/10">
                       <p className="text-sm font-medium text-zinc-900 dark:text-white">
-                        {callerLocations[record.src] || 'Loading...'}
+                        {record.callerFrom || 'N/A'}
                       </p>
                     </TableCell>
                     <TableCell className="w-max border-b-[1px] border-zinc-200 py-5 pl-5 pr-4 dark:border-white/10">
@@ -550,7 +573,7 @@ export default function CdrListTable(props: { refreshData: () => void }) {
                     </TableCell>
                     <TableCell className="w-max border-b-[1px] border-zinc-200 py-5 pl-5 pr-4 dark:border-white/10">
                       <p className="text-sm font-medium text-zinc-900 dark:text-white">
-                        {record.userEmail || 'N/A'}
+                        {record.userEmail || record.email || 'N/A'}
                       </p>
                     </TableCell>
                     <TableCell className="w-max border-b-[1px] border-zinc-200 py-5 pl-5 pr-4 dark:border-white/10">
