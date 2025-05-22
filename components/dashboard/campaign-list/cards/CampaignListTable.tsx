@@ -180,42 +180,59 @@ function CampaignListTable(props: { refreshData: () => void }) {
 
   const handleCreate = async (newCampaign: Omit<Campaign, 'id'>) => {
     try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      // Validate required fields
+      if (!newCampaign.name || !newCampaign.assignedNumber) {
+        throw new Error('Campaign name and assigned number are required');
+      }
+
       // Ensure all required fields are included
       const payload = {
-        name: newCampaign?.name,
-        assignedNumber: newCampaign?.assignedNumber,
-        createdBy: newCampaign?.createdBy,
-        targets: newCampaign?.targets || [],
-        type: newCampaign?.type || 'roundrobin',
-        status: newCampaign?.status !== undefined ? newCampaign?.status : true
+        name: newCampaign.name,
+        assignedNumber: newCampaign.assignedNumber,
+        createdBy: newCampaign.createdBy,
+        targets: newCampaign.targets || [],
+        type: newCampaign.type || 'roundrobin',
+        status: newCampaign.status !== undefined ? newCampaign.status : true,
+        voipBehavior: newCampaign.voipBehavior !== undefined ? newCampaign.voipBehavior : true
       };
 
       console.log('Creating campaign with payload:', payload);
-      console.log(
-        'This should ONLY appear when the Create Campaign button is clicked'
-      );
 
       const response = await fetch('/api/campaigns', {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(payload)
       });
 
+      console.log('Create campaign response status:', response.status);
+      
       const result = await response.json();
-      // if (!result.success) {
-      //   console.error('Server error:', result);
-      //   toast({
-      //     variant: "destructive",
-      //     title: "Failed to create campaign",
-      //     description: result.message || "An error occurred while creating the campaign?.",
-      //   });
-      //   throw new Error('Failed to create campaign');
-      // }
+      console.log('Create campaign response:', result);
 
-      // setData([...data, result.data]);
-      fetchCampaigns();
+      if (!response.ok) {
+        throw new Error(`API responded with status: ${response.status} - ${result.message || 'Unknown error'}`);
+      }
+
+      if (!result.success) {
+        console.error('Server error:', result);
+        toast({
+          variant: "destructive",
+          title: "Failed to create campaign",
+          description: result.message || "An error occurred while creating the campaign.",
+        });
+        throw new Error(result.message || 'Failed to create campaign');
+      }
+
+      // Add the new campaign to the list
+      setData([...data, result.data]);
       setIsCreateModalOpen(false);
       props.refreshData();
       toast({
@@ -227,7 +244,7 @@ function CampaignListTable(props: { refreshData: () => void }) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to create campaign?. Please try again.'
+        description: error instanceof Error ? error.message : 'Failed to create campaign. Please try again.'
       });
     }
   };

@@ -164,19 +164,12 @@ export default function AreaChartComponent() {
         console.log('Data from API:', dataArray);
         
         // Transform data for the chart with proper type handling
-        let formattedData = dataArray.map((item: CallRecordDataItem) => {
-          // Log to identify any issues
-          console.log('Raw item:', item);
-          
-          return {
-            date: item.date || item.month || '', // Use date field if available, otherwise fall back to month
-            answeredCalls: Number(item.answeredCalls) || 0,
-            unansweredCalls: Number(item.unansweredCalls) || 0,
-            failedCalls: Number(item.failedCalls) || 0
-          };
-        });
-
-        console.log('Formatted data:', formattedData);
+        let formattedData = dataArray.map((item: CallRecordDataItem) => ({
+          date: item.date || item.month || '', // Use date field if available, otherwise fall back to month
+          answeredCalls: Number(item.answeredCalls) || 0,
+          unansweredCalls: Number(item.unansweredCalls) || 0,
+          failedCalls: Number(item.failedCalls) || 0
+        }));
 
         // Sort data chronologically
         formattedData.sort((a, b) => a.date.localeCompare(b.date));
@@ -208,30 +201,8 @@ export default function AreaChartComponent() {
           }
         }
         
-        // When only one data point exists (plus our zero point), don't accumulate
-        let finalData;
-        if (formattedData.length === 2) {
-          finalData = formattedData;
-          console.log('Using direct values for single data point chart:', finalData);
-        } else {
-          // Accumulate values across time periods (running total)
-          finalData = formattedData.reduce((acc: ChartDataItem[], current, index) => {
-            if (index === 0) {
-              // First item (zero) as is
-              acc.push({...current});
-            } else {
-              // For subsequent items, add values from previous period
-              const prev = acc[index-1];
-              acc.push({
-                date: current.date,
-                answeredCalls: prev.answeredCalls + current.answeredCalls,
-                unansweredCalls: prev.unansweredCalls + current.unansweredCalls,
-                failedCalls: prev.failedCalls + current.failedCalls
-              });
-            }
-            return acc;
-          }, []);
-        }
+        // Use the formatted data directly without accumulation
+        const finalData = formattedData;
 
         console.log('Original data:', formattedData);
         console.log('Final chart data:', finalData);
@@ -327,29 +298,8 @@ export default function AreaChartComponent() {
           }
         }
         
-        // When only one data point exists (plus our zero point), don't accumulate
-        let finalData;
-        if (formattedData.length === 2) {
-          finalData = formattedData;
-        } else {
-          // Accumulate values across time periods (running total)
-          finalData = formattedData.reduce((acc: ChartDataItem[], current, index) => {
-            if (index === 0) {
-              // First item (zero) as is
-              acc.push({...current});
-            } else {
-              // For subsequent items, add values from previous period
-              const prev = acc[index-1];
-              acc.push({
-                date: current.date,
-                answeredCalls: prev.answeredCalls + current.answeredCalls,
-                unansweredCalls: prev.unansweredCalls + current.unansweredCalls,
-                failedCalls: prev.failedCalls + current.failedCalls
-              });
-            }
-            return acc;
-          }, []);
-        }
+        // Use the formatted data directly without accumulation
+        const finalData = formattedData;
 
         console.log('Refreshed data:', finalData);
         

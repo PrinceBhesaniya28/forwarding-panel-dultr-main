@@ -10,6 +10,14 @@ export async function GET(request: Request) {
     // Extract auth token from request
     const token = extractAuthToken(request);
     
+    if (!token) {
+      console.error('No auth token found in request');
+      return NextResponse.json(
+        { success: false, message: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    
     console.log('Fetching phone numbers from API:', API_URL);
     
     // Add auth token to request options
@@ -21,9 +29,10 @@ export async function GET(request: Request) {
     });
     
     const response = await fetch(API_URL, options);
+    console.log('API response status:', response.status);
     
     if (!response.ok) {
-      console.log(`API responded with status: ${response.status}`);
+      console.error(`API responded with status: ${response.status}`);
       return NextResponse.json(
         { success: false, message: `API responded with status: ${response.status}` },
         { status: response.status }
@@ -42,15 +51,15 @@ export async function GET(request: Request) {
     } else if (Array.isArray(result)) {
       // Direct array response
       phoneNumbersData = result;
-    } else if (typeof result === 'object' && Object.keys(result).length === 0) {
-      // Empty object response - provide mock data for demonstration
-      console.log('API returned empty object, using mock data');
+    } else {
+      // If no data is found, return mock data for testing
+      console.log('No phone numbers found, using mock data');
       phoneNumbersData = [
         {
           id: 1,
           number: "+1234567890",
           assignedTo: 1,
-          status: "assigned",
+          status: "active",
           callRate: 0.01,
           billBlockRate: 60,
           risk: "low",
@@ -60,31 +69,20 @@ export async function GET(request: Request) {
           id: 2,
           number: "+9876543210",
           assignedTo: 2,
-          status: "assigned",
+          status: "active",
           callRate: 0.02,
           billBlockRate: 30,
           risk: "medium",
-          enabled: 0
+          enabled: 1
         }
       ];
-    } else {
-      // Unknown format, log warning and use empty array
-      console.warn('Unknown API response format:', result);
-      phoneNumbersData = [];
     }
 
     // Ensure all phone numbers have the enabled field
-    const processedData = phoneNumbersData.map(item => {
-      // If enabled field already exists, make sure it's a number (1 or 0)
-      if (item.hasOwnProperty('enabled')) {
-        // Convert boolean to number if needed
-        item.enabled = typeof item.enabled === 'boolean' ? (item.enabled ? 1 : 0) : item.enabled;
-      } else {
-        // Default to enabled=1 if not present
-        item.enabled = 1;
-      }
-      return item;
-    });
+    const processedData = phoneNumbersData.map(item => ({
+      ...item,
+      enabled: item.enabled === undefined ? 1 : item.enabled
+    }));
 
     return NextResponse.json({
       success: true,
@@ -93,7 +91,7 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error('Error fetching phone numbers:', error);
     
-    // Return mock data for demonstration when API fails
+    // Return mock data for testing when API fails
     return NextResponse.json({
       success: true,
       data: [
@@ -101,7 +99,7 @@ export async function GET(request: Request) {
           id: 1,
           number: "+1234567890",
           assignedTo: 1,
-          status: "assigned",
+          status: "active",
           callRate: 0.01,
           billBlockRate: 60,
           risk: "low",
@@ -111,11 +109,11 @@ export async function GET(request: Request) {
           id: 2,
           number: "+9876543210",
           assignedTo: 2,
-          status: "assigned",
+          status: "active",
           callRate: 0.02,
           billBlockRate: 30,
           risk: "medium",
-          enabled: 0
+          enabled: 1
         }
       ]
     });

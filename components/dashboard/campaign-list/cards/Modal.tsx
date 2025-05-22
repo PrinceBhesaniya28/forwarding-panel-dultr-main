@@ -87,60 +87,79 @@ interface CreateModalProps {
   onCreate: (campaign: Omit<Campaign, 'id'>) => void;
 }
 
-function usePhoneNumbers() {
+const usePhoneNumbers = () => {
   const [phoneNumbers, setPhoneNumbers] = useState<PhoneNumber[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPhoneNumbers = async () => {
-      setIsLoading(true);
       try {
-
-        const authToken = localStorage.getItem('auth_token');
+        setLoading(true);
+        setError(null);
         
-        const response = await fetch(`/api/numbers`, {
+        const token = localStorage.getItem('auth_token');
+        console.log('Auth token found:', !!token);
+        
+        if (!token) {
+          throw new Error('No authentication token found');
+        }
+
+        console.log('Fetching phone numbers...');
+        const response = await fetch('/api/numbers', {
           headers: {
-            'Authorization': `Bearer ${authToken}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
+
+        console.log('Phone numbers response status:', response.status);
         
-        console.log('Phone numbers API response status:', response.status);
-
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error(`API responded with status: ${response.status}`);
         }
 
-        const data = await response.json();
-        console.log('Phone numbers API response:', data);
+        const result = await response.json();
+        console.log('Phone numbers API response:', result);
 
-        if (data.data && Array.isArray(data.data)) {
-          console.log('Using data from result.data (array)');
-          setPhoneNumbers(data.data);
-        } else if (Array.isArray(data)) {
-          console.log('Using data directly (array)');
-          setPhoneNumbers(data);
-        } else {
-          console.error('Expected phone numbers array but got:', data);
-          throw new Error('Invalid data format');
+        if (!result.success) {
+          throw new Error(result.message || 'Failed to fetch phone numbers');
         }
-      } catch (error) {
-        console.error('Failed to fetch phone numbers:', error);
+
+        if (!Array.isArray(result.data)) {
+          console.error('Invalid response format:', result);
+          throw new Error('Invalid response format: data is not an array');
+        }
+
+        console.log('Total phone numbers received:', result.data.length);
+        
+        // Filter out numbers that are not enabled
+        const availableNumbers = result.data.filter((number: PhoneNumber) => {
+          console.log('Phone number:', number.number, 'enabled:', number.enabled);
+          return number.enabled === 1;
+        });
+        
+        console.log(`Found ${availableNumbers.length} available phone numbers:`, availableNumbers);
+        
+        setPhoneNumbers(availableNumbers);
+      } catch (err) {
+        console.error('Error fetching phone numbers:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch phone numbers');
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
 
     fetchPhoneNumbers();
   }, []);
 
-  return { phoneNumbers, isLoading };
-}
+  return { phoneNumbers, loading, error };
+};
 
 export function EditModal({ campaign, onClose, onSave }: EditModalProps) {
   const [formData, setFormData] = useState<Campaign | null>(campaign);
   const [users, setUsers] = useState<User[]>([]);
-  const { phoneNumbers, isLoading: phoneNumbersLoading } = usePhoneNumbers();
+  const { phoneNumbers, loading: phoneNumbersLoading, error: phoneNumbersError } = usePhoneNumbers();
   const [selectedNumbers, setSelectedNumbers] = useState<string[]>([]);
   const [targetFormData, setTargetFormData] = useState<Omit<Target, 'id'>>({
     targetNumber: '',
@@ -351,39 +370,41 @@ export function EditModal({ campaign, onClose, onSave }: EditModalProps) {
                       {isDropdownOpen && (
                         <div className="absolute z-10 mt-1 w-full rounded-md border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
                           <div className="max-h-60 overflow-y-auto py-1">
-                            {phoneNumbers.map((number) => (
-                              <div
-                                key={number.id}
-                                className={`flex cursor-pointer items-center justify-between px-4 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-700 ${
-                                  selectedNumbers.includes(number.number)
-                                    ? 'bg-zinc-100 dark:bg-zinc-700'
-                                    : ''
-                                }`}
-                                onClick={() => {
-                                  if (selectedNumbers.includes(number.number)) {
-                                    setSelectedNumbers(
-                                      selectedNumbers.filter(
-                                        (n) => n !== number.number
-                                      )
-                                    );
-                                  } else {
-                                    setSelectedNumbers([
-                                      ...selectedNumbers,
-                                      number.number
-                                    ]);
-                                  }
-                                }}
-                              >
-                                <span className="text-zinc-900 dark:text-zinc-100">
-                                  {number.number}
-                                </span>
-                                {number.status === 'active' && (
-                                  <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800 dark:bg-green-900 dark:text-green-300">
-                                    Active
+                            {phoneNumbers
+                              .filter(number => number.enabled === 1)
+                              .map((number) => (
+                                <div
+                                  key={number.id}
+                                  className={`flex cursor-pointer items-center justify-between px-4 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-700 ${
+                                    selectedNumbers.includes(number.number)
+                                      ? 'bg-zinc-100 dark:bg-zinc-700'
+                                      : ''
+                                  }`}
+                                  onClick={() => {
+                                    if (selectedNumbers.includes(number.number)) {
+                                      setSelectedNumbers(
+                                        selectedNumbers.filter(
+                                          (n) => n !== number.number
+                                        )
+                                      );
+                                    } else {
+                                      setSelectedNumbers([
+                                        ...selectedNumbers,
+                                        number.number
+                                      ]);
+                                    }
+                                  }}
+                                >
+                                  <span className="text-zinc-900 dark:text-zinc-100">
+                                    {number.number}
                                   </span>
-                                )}
-                              </div>
-                            ))}
+                                  {number.status === 'active' && (
+                                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800 dark:bg-green-900 dark:text-green-300">
+                                      Active
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
                           </div>
                         </div>
                       )}
@@ -698,7 +719,7 @@ export function CreateModal({ isOpen, onClose, onCreate }: CreateModalProps) {
     voipBehavior: true
   });
   const [users, setUsers] = useState<User[]>([]);
-  const { phoneNumbers, isLoading: phoneNumbersLoading } = usePhoneNumbers();
+  const { phoneNumbers, loading: phoneNumbersLoading, error: phoneNumbersError } = usePhoneNumbers();
   const [selectedNumbers, setSelectedNumbers] = useState<string[]>([]);
   const [targetFormData, setTargetFormData] = useState<Omit<Target, 'id'>>({
     targetNumber: '',
@@ -733,7 +754,7 @@ export function CreateModal({ isOpen, onClose, onCreate }: CreateModalProps) {
         console.log('Fetching users...');
         const authToken = localStorage.getItem('auth_token');
         
-        const response = await fetch(`/api/users/`, {
+        const response = await fetch(`/api/users/list`, {
           headers: {
             'Authorization': `Bearer ${authToken}`,
             'Content-Type': 'application/json'
@@ -742,24 +763,15 @@ export function CreateModal({ isOpen, onClose, onCreate }: CreateModalProps) {
         const result = await response.json();
         console.log('Users API response:', result);
 
-        if (Array.isArray(result)) {
-          // The API returns the users directly as an array
-          console.log(`Found ${result.length} users in direct array`);
-          setUsers(result);
-          // Automatically select the first user if available
-          if (result.length > 0) {
-            setFormData(prev => ({ ...prev, createdBy: result[0].id }));
-          }
-        } else if (result.data && Array.isArray(result.data)) {
-          // Fallback if API returns { data: [...] }
-          console.log(`Found ${result.data.length} users in result.data`);
+        if (result.success && Array.isArray(result.data)) {
+          console.log(`Found ${result.data.length} users`);
           setUsers(result.data);
           // Automatically select the first user if available
           if (result.data.length > 0) {
             setFormData(prev => ({ ...prev, createdBy: result.data[0].id }));
           }
         } else {
-          console.error('Expected users array but got:', result);
+          console.error('Invalid response format:', result);
         }
       } catch (error) {
         console.error('Failed to fetch users:', error);
@@ -940,7 +952,7 @@ export function CreateModal({ isOpen, onClose, onCreate }: CreateModalProps) {
                         <div className="absolute z-10 mt-1 w-full rounded-md border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
                           <div className="max-h-60 overflow-y-auto py-1">
                             {phoneNumbers
-                              .filter(number => number.inUse !== true)
+                              .filter(number => number.enabled === 1)
                               .map((number) => (
                                 <div
                                   key={number.id}

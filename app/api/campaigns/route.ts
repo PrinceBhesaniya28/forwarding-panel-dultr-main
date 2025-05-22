@@ -42,9 +42,21 @@ export async function GET(request: Request) {
 // POST /api/campaigns - Create a new campaign
 export async function POST(request: Request) {
   try {
+    // Extract auth token from request
+    const token = extractAuthToken(request);
+    if (!token) {
+      console.error('No authentication token found in request');
+      return NextResponse.json(
+        { success: false, message: 'Authentication token is required' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
+    console.log('Received request body:', body);
 
     if (!body.name || !body.assignedNumber) {
+      console.error('Missing required fields:', { name: body.name, assignedNumber: body.assignedNumber });
       return NextResponse.json(
         { success: false, message: 'Missing required fields' },
         { status: 400 }
@@ -57,14 +69,16 @@ export async function POST(request: Request) {
       createdBy: body.createdBy,
       targets: body.targets || [],
       type: body.type || 'roundrobin',
-      status: body.status !== undefined ? body.status : true
+      status: body.status !== undefined ? body.status : true,
+      voipBehavior: body.voipBehavior !== undefined ? body.voipBehavior : true
     };
 
     console.log('API Route - Received POST request for new campaign');
     console.log('API Route - Sending request to:', API_URL);
     console.log('API Route - Request payload:', JSON.stringify(payload));
 
-    const response = await fetch(API_URL, {
+    // Add auth token to request options
+    const options = addAuthToRequestOptions(token, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -72,25 +86,38 @@ export async function POST(request: Request) {
       body: JSON.stringify(payload)
     });
 
-    // if (!response.ok) {
-    //   console.error(`API Route - Backend responded with status: ${response.status}`);
-    //   throw new Error(`API responded with status: ${response.status}`);
-    // }
+    console.log('API Route - Request options:', {
+      method: options.method,
+      headers: options.headers,
+      body: options.body
+    });
+
+    const response = await fetch(API_URL, options);
+    console.log('API Route - Backend response status:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Route - Backend error response:', errorText);
+      throw new Error(`API responded with status: ${response.status} - ${errorText}`);
+    }
 
     const result = await response.json();
     console.log('API Route - Backend response:', result);
 
-    // if (!result.success) {
-    //   throw new Error(result.message || 'Failed to create campaign');
-    // }
+    if (!result.success) {
+      console.error('API Route - Backend returned unsuccessful response:', result);
+      throw new Error(result.message || 'Failed to create campaign');
+    }
 
     return NextResponse.json(result);
   } catch (error) {
     console.error('Error creating campaign:', error);
+    // Return a more detailed error response
     return NextResponse.json(
       {
         success: false,
-        message: `Failed to create campaign: ${error instanceof Error ? error.message : 'Unknown error'}`
+        message: `Failed to create campaign: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error: error instanceof Error ? error.stack : undefined
       },
       { status: 500 }
     );
