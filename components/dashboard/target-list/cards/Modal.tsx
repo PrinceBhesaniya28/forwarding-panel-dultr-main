@@ -324,8 +324,6 @@ export function AddTargetModal({ isOpen, onClose, onAdd, campaigns }: AddTargetM
     
     const newTarget: Omit<TargetRecord, 'today'> = {
       ...formData,
-      today: new Date().getTime(),
-      currentConcurrency: 0,
       assignedTo: ''
     };
     
@@ -484,22 +482,56 @@ export function AddTargetModal({ isOpen, onClose, onAdd, campaigns }: AddTargetM
 
 export function EditTargetModal({ target, onClose, onSave, campaigns }: EditTargetModalProps) {
   const [formData, setFormData] = useState<TargetRecord>({
-    ...target,
+    id: target?.id,
+    targetNumber: target?.targetNumber || '',
+    campaignId: target?.campaignId || '',
+    campaignName: target?.campaignName,
+    assignedTo: target?.assignedTo,
+    priority: target?.priority || 1,
+    dailyCap: target?.dailyCap || 1,
+    dailyCapValue: target?.dailyCapValue || 10,
+    concurrency: target?.concurrency || 6,
+    dialDuration: target?.dialDuration || 30,
     today: target?.today ? new Date(target.today).getTime() : undefined,
     status: target?.status || 1,
-    voipBehavior: target?.voipBehavior || true
+    voipBehavior: target?.voipBehavior ?? true
   });
+
+  // Update form data when target changes
+  useEffect(() => {
+    if (target) {
+      setFormData({
+        id: target.id,
+        targetNumber: target.targetNumber || '',
+        campaignId: target.campaignId || '',
+        campaignName: target.campaignName,
+        assignedTo: target.assignedTo,
+        priority: target.priority || 1,
+        dailyCap: target.dailyCap || 1,
+        dailyCapValue: target.dailyCapValue || 10,
+        concurrency: target.concurrency || 6,
+        dialDuration: target.dialDuration || 30,
+        today: target.today ? new Date(target.today).getTime() : undefined,
+        status: target.status || 1,
+        voipBehavior: target.voipBehavior ?? true
+      });
+    }
+  }, [target]);
 
   const handleSave = () => {
     if (!formData || !formData.targetNumber || !formData.campaignId || formData.dailyCapValue <= 0 || formData.concurrency <= 0) {
       return;
     }
     
+    // Ensure we preserve the original target's ID and other important fields
     const updatedTarget: TargetRecord = {
-      ...formData,
-      today: formData.today ? new Date(formData.today).getTime() : undefined,
+      ...target, // Preserve original target data
+      ...formData, // Override with form data
+      id: target?.id, // Ensure ID is preserved
+      today: target?.today ? new Date(target.today).getTime() : undefined,
       status: formData.status,
-      voipBehavior: formData.voipBehavior
+      voipBehavior: formData.voipBehavior,
+      campaignName: campaigns.find(c => c.id === formData.campaignId)?.name || target?.campaignName
     };
     
     onSave(updatedTarget);

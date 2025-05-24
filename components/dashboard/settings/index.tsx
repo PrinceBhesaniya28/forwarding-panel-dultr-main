@@ -187,10 +187,10 @@ export default function Settings(props: Props) {
             </Avatar>
             <div className="ml-4">
               <p className="text-xl font-extrabold text-foreground leading-[100%] dark:text-white md:text-3xl">
-                {userData?.name}
+                {userData?.name || props.user?.user_metadata.full_name}
               </p>
               <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 md:mt-2 md:text-base">
-                {userData?.email}
+                {props.user?.email}
               </p>
             </div>
           </Card>

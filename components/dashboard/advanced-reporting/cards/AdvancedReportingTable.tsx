@@ -11,6 +11,13 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { HiMagnifyingGlass, HiArrowDownTray } from 'react-icons/hi2';
 import { getWithAuth } from '@/utils/api-helpers';
 
@@ -34,6 +41,19 @@ export type CallRecord = {
 // Cache for location data
 const locationCache: Record<string, string> = {};
 
+// Helper to get today date range (midnight to midnight, YYYY-MM-DD)
+function getTodayDateRange() {
+  const today = new Date();
+  const startOfDay = new Date(today);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(today);
+  endOfDay.setHours(23, 59, 59, 999);
+  return {
+    startDate: startOfDay.toISOString().split('T')[0],
+    endDate: endOfDay.toISOString().split('T')[0]
+  };
+}
+
 export default function AdvancedReportingTable() {
   const { toast } = useToast();
   const [records, setRecords] = useState<CallRecord[]>([]);
@@ -41,6 +61,11 @@ export default function AdvancedReportingTable() {
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [searchResults, setSearchResults] = useState<CallRecord[]>([]);
+  const [isDownloadDialogOpen, setIsDownloadDialogOpen] = useState(false);
+  const [downloadSearchQuery, setDownloadSearchQuery] = useState('');
+  const [downloadResults, setDownloadResults] = useState<CallRecord[]>([]);
+  const [isDownloadLoading, setIsDownloadLoading] = useState(false);
   const recordsPerPage = 10;
 
   // Fetch location data for a single record
@@ -75,7 +100,7 @@ export default function AdvancedReportingTable() {
     }
   };
 
-  // Fetch call records
+  // Fetch call records (now only for today, midnight to midnight)
   const fetchRecords = async () => {
     setIsLoading(true);
     try {
@@ -85,12 +110,21 @@ export default function AdvancedReportingTable() {
         throw new Error('No authentication token found');
       }
 
-      console.log('Fetching records from CDR API...');
-      const response = await fetch('/api/cdr', {
+      // Get today date range (midnight to midnight)
+      const { startDate, endDate } = getTodayDateRange();
+      console.log('Fetching CDRs from', startDate, 'to', endDate); // DEBUG
+      const query = new URLSearchParams();
+      query.append('startDate', startDate);
+      query.append('endDate', endDate);
+      query.append('limit', '10000');
+
+      // Fetch only today's records (midnight to midnight)
+      const response = await fetch(`/api/cdr?${query.toString()}`, {
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json'
-        }
+        },
+        cache: 'no-store' // Ensure we don't cache the response
       });
 
       if (!response.ok) {
@@ -98,11 +132,10 @@ export default function AdvancedReportingTable() {
       }
 
       const result = await response.json();
-      console.log('CDR API response:', result);
+      console.log('CDR API response:', result); // DEBUG
 
       if (result.success) {
-        console.log('Successfully fetched records:', result.data?.length || 0);
-        // First set the records without location data
+        console.log('Successfully fetched records:', result.data?.length || 0); // DEBUG
         setRecords(result.data || []);
         setTotalPages(Math.ceil((result.data?.length || 0) / recordsPerPage));
         
@@ -150,16 +183,21 @@ export default function AdvancedReportingTable() {
   }, []);
 
   // Filter records based on search query
-  const filteredRecords = records.filter(record =>
-    record.src?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    record.callerLocation?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    record.userName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    record.userEmail?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    record.campaignName?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filterRecords = (query: string) => {
+    const filtered = records.filter(record =>
+      record.src?.toLowerCase().includes(query.toLowerCase()) ||
+      record.callerLocation?.toLowerCase().includes(query.toLowerCase()) ||
+      record.userName?.toLowerCase().includes(query.toLowerCase()) ||
+      record.userEmail?.toLowerCase().includes(query.toLowerCase()) ||
+      record.campaignName?.toLowerCase().includes(query.toLowerCase()) ||
+      record.disposition?.toLowerCase().includes(query.toLowerCase())
+    );
+    console.log('Filtered records count:', filtered.length);
+    return filtered;
+  };
 
   // Get current page records
-  const currentRecords = filteredRecords.slice(
+  const currentRecords = searchQuery ? searchResults : records.slice(
     (page - 1) * recordsPerPage,
     page * recordsPerPage
   );
@@ -172,8 +210,71 @@ export default function AdvancedReportingTable() {
   };
 
   // Handle search
-  const handleSearch = () => {
-    setPage(1);
+  const handleSearch = async () => {
+    if (!searchQuery) {
+      setSearchResults([]);
+      setPage(1);
+      setTotalPages(Math.ceil(records.length / recordsPerPage));
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Get auth token from localStorage
+      const authToken = localStorage.getItem('auth_token');
+      if (!authToken) {
+        throw new Error('No authentication token found');
+      }
+
+      // Fetch ALL records by setting a high limit
+      const response = await fetch('/api/cdr?limit=10000', {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        },
+        cache: 'no-store'
+      });
+
+      if (!response.ok) {
+        throw new Error(`API responded with status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('CDR API response:', result);
+
+      if (result.success) {
+        // Search through all records, focusing on disposition field
+        const searchTerm = searchQuery.toUpperCase();
+        const allMatchingResults = (result.data || []).filter(record => {
+          const disposition = record.disposition?.toUpperCase() || '';
+          return disposition.includes(searchTerm);
+        });
+        console.log('Total matching results:', allMatchingResults.length);
+
+        // Set the search results and show all on one page
+        setSearchResults(allMatchingResults);
+        setPage(1);
+        setTotalPages(1); // Force all results to show on one page
+
+        // Show toast with number of results found
+        toast({
+          title: "Search Results",
+          description: `Found ${allMatchingResults.length} records matching "${searchQuery}"`,
+        });
+      } else {
+        throw new Error(result.message || 'Failed to fetch records');
+      }
+    } catch (error) {
+      console.error('Error in handleSearch:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to search records. Please try again.",
+      });
+      setSearchResults([]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Handle pagination
@@ -185,8 +286,20 @@ export default function AdvancedReportingTable() {
     if (page < totalPages) setPage(page + 1);
   };
 
-  // Download CSV
+  // Download dialog search handler
+  const handleDownloadSearch = async () => {
+    setIsDownloadLoading(true);
+    // Filter by disposition (status)
+    const filtered = records.filter(record =>
+      record.disposition?.toLowerCase().includes(downloadSearchQuery.toLowerCase())
+    );
+    setDownloadResults(filtered);
+    setIsDownloadLoading(false);
+  };
+
+  // Download CSV for dialog
   const downloadCSV = () => {
+    if (downloadResults.length === 0) return;
     const headers = [
       'Date & Time',
       'Source Number',
@@ -199,8 +312,7 @@ export default function AdvancedReportingTable() {
       'Duration',
       'Status'
     ];
-
-    const rows = filteredRecords.map(record => [
+    const rows = downloadResults.map(record => [
       new Date(record.calldate).toLocaleString(),
       record.src,
       record.callerLocation || 'Unknown',
@@ -212,30 +324,40 @@ export default function AdvancedReportingTable() {
       formatDuration(record.billsec),
       record.disposition
     ]);
-
     const csvContent = [
       headers.join(','),
       ...rows.map(row => row.join(','))
     ].join('\n');
-
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `advanced_report_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `advanced_report_${downloadSearchQuery}_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    setIsDownloadDialogOpen(false);
+    setDownloadSearchQuery('');
+    setDownloadResults([]);
   };
 
   return (
     <div className="space-y-4">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="flex flex-col items-center justify-center py-4">
+          <div className="text-sm text-zinc-500">Total Records</div>
+          <div className="text-2xl font-bold">{records.length}</div>
+        </Card>
+        {/* You can add more summary cards here if needed */}
+      </div>
+
       <div className="flex justify-between items-center pb-4 pt-4 gap-4">
         <div className="flex gap-4">
           <div className="relative w-80">
             <Input
               type="text"
-              placeholder="Search records..."
+              placeholder="Search by status (e.g., ANSWERED, NO ANSWER)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -245,9 +367,22 @@ export default function AdvancedReportingTable() {
               className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-500"
               onClick={handleSearch}
             />
+            {searchQuery && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setSearchResults([]);
+                  setPage(1);
+                  setTotalPages(Math.ceil(records.length / recordsPerPage));
+                }}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-zinc-500 hover:text-zinc-700"
+              >
+                ×
+              </button>
+            )}
           </div>
           <Button
-            onClick={downloadCSV}
+            onClick={() => setIsDownloadDialogOpen(true)}
             className="bg-blue-600 text-white hover:bg-blue-700"
           >
             <HiArrowDownTray className="h-4 w-4 mr-2" />
@@ -255,6 +390,74 @@ export default function AdvancedReportingTable() {
           </Button>
         </div>
       </div>
+
+      {/* Download Dialog */}
+      <Dialog open={isDownloadDialogOpen} onOpenChange={setIsDownloadDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Download Filtered Records</DialogTitle>
+          </DialogHeader>
+          <div>
+            <Input
+              placeholder="Search by status (e.g., ANSWERED, NO ANSWER)..."
+              value={downloadSearchQuery}
+              onChange={e => setDownloadSearchQuery(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleDownloadSearch()}
+            />
+            <Button onClick={handleDownloadSearch} className="ml-2 mt-2">
+              <HiMagnifyingGlass className="mr-1" />
+              Search
+            </Button>
+          </div>
+          {isDownloadLoading ? (
+            <div>Loading...</div>
+          ) : (
+            <div className="max-h-[300px] overflow-y-auto mt-4">
+              {downloadResults.length > 0 ? (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr>
+                      <th>Date & Time</th>
+                      <th>Source Number</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {downloadResults.map(record => (
+                      <tr key={record.uniqueid}>
+                        <td>{new Date(record.calldate).toLocaleString()}</td>
+                        <td>{record.src}</td>
+                        <td>{record.disposition}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="text-center text-zinc-400">No records found</div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsDownloadDialogOpen(false);
+                setDownloadSearchQuery('');
+                setDownloadResults([]);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={downloadCSV}
+              disabled={downloadResults.length === 0}
+              className="bg-blue-600 text-white hover:bg-blue-700"
+            >
+              Download {downloadResults.length > 0 ? `(${downloadResults.length} records)` : ''}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Card className="h-full w-full p-0">
         <div className="overflow-x-auto">
@@ -306,7 +509,8 @@ export default function AdvancedReportingTable() {
           </Table>
         </div>
 
-        {!isLoading && totalPages > 1 && (
+        {/* Only show pagination when not searching */}
+        {!isLoading && !searchQuery && totalPages > 1 && (
           <div className="mt-4 flex justify-between items-center px-4 py-2">
             <Button
               onClick={handlePrevPage}
