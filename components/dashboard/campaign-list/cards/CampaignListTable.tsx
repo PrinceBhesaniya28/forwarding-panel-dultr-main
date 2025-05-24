@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { HiPencil, HiTrash, HiPlus, HiMagnifyingGlass } from 'react-icons/hi2';
 import { EditModal, DeleteModal, CreateModal } from './Modal';
 import { getWithAuth } from '@/utils/api-helpers';
@@ -23,6 +23,7 @@ type Target = {
   priority: number;
   concurrency: number;
   id?: number;
+  voip: boolean;
 };
 
 type Campaign = {
@@ -34,6 +35,7 @@ type Campaign = {
   campaignId?: number;
   type: 'roundrobin' | 'dupe';
   status: boolean;
+  voip: boolean;
 };
 
 function CampaignListTable(props: { refreshData: () => void }) {
@@ -47,8 +49,7 @@ function CampaignListTable(props: { refreshData: () => void }) {
   const [currentPage, setCurrentPage] = useState(0);
   const campaignsPerPage = 6;
 
-
-  const fetchCampaigns = async () => {
+  const fetchCampaigns = useCallback(async () => {
     setIsLoading(true);
     try {
       const result = await getWithAuth<Campaign[]>('/api/campaigns');
@@ -76,12 +77,12 @@ function CampaignListTable(props: { refreshData: () => void }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   // Fetch campaigns
   useEffect(() => {
     fetchCampaigns();
-  }, []);
+  }, [fetchCampaigns]);
 
   const handleSaveEdit = async (campaign: Campaign) => {
     try {
@@ -198,7 +199,7 @@ function CampaignListTable(props: { refreshData: () => void }) {
         targets: newCampaign.targets || [],
         type: newCampaign.type || 'roundrobin',
         status: newCampaign.status !== undefined ? newCampaign.status : true,
-        voipBehavior: newCampaign.voipBehavior !== undefined ? newCampaign.voipBehavior : true
+        voip: newCampaign.voip !== undefined ? newCampaign.voip : true
       };
 
       console.log('Creating campaign with payload:', payload);
@@ -217,28 +218,45 @@ function CampaignListTable(props: { refreshData: () => void }) {
       const result = await response.json();
       console.log('Create campaign response:', result);
 
-      if (!response.ok) {
-        throw new Error(`API responded with status: ${response.status} - ${result.message || 'Unknown error'}`);
-      }
-
-      if (!result.success) {
-        console.error('Server error:', result);
-        toast({
-          variant: "destructive",
-          title: "Failed to create campaign",
-          description: result.message || "An error occurred while creating the campaign.",
-        });
-        throw new Error(result.message || 'Failed to create campaign');
-      }
-
-      // Add the new campaign to the list
-      setData([...data, result.data]);
+      // Close the modal first
       setIsCreateModalOpen(false);
-      props.refreshData();
-      toast({
-        title: 'Campaign created',
-        description: 'New campaign has been successfully created.'
+
+      // Log the full response for debugging
+      console.log('Full response:', {
+        status: response.status,
+        ok: response.ok,
+        result: result
       });
+
+      // If we have data in the response, use it
+      if (result.data) {
+        console.log('Adding campaign from response data:', result.data);
+        setData(prevData => [result.data, ...prevData]);
+        toast({
+          title: 'Campaign created',
+          description: 'New campaign has been successfully created.'
+        });
+        return;
+      }
+
+      // If the response was successful but no data, refresh the list
+      if (response.ok) {
+        console.log('Response was OK, refreshing campaign list');
+        await fetchCampaigns();
+        toast({
+          title: 'Campaign created',
+          description: 'New campaign has been successfully created.'
+        });
+        return;
+      }
+
+      // If we get here, something went wrong
+      console.error('Campaign creation failed:', {
+        status: response.status,
+        result: result
+      });
+      throw new Error(result.message || 'Failed to create campaign');
+
     } catch (error) {
       console.error('Error creating campaign:', error);
       toast({

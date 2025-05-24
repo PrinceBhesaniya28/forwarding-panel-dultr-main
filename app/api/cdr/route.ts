@@ -24,7 +24,8 @@ export async function GET(request: Request) {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-      }
+      },
+      cache: 'no-store' // Ensure we don't cache the response
     });
     
     const response = await fetch(url, options);
@@ -38,9 +39,11 @@ export async function GET(request: Request) {
     
     // Ensure user email is included in the response
     if (result.success && Array.isArray(result.data)) {
+      console.log('Total records received:', result.data.length);
       result.data = result.data.map((record: any) => ({
         ...record,
-        userEmail: record.email || record.userEmail || null
+        userEmail: record.userEmail || record.email || record.user?.email || null,
+        email: record.userEmail || record.email || record.user?.email || null
       }));
     }
     

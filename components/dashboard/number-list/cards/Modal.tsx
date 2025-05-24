@@ -72,7 +72,7 @@ function useUsers() {
         console.log('Fetching users...');
         const authToken = localStorage.getItem('auth_token');
         
-        const response = await fetch(`/api/users/`, {
+        const response = await fetch(`/api/users/list`, {
           headers: {
             'Authorization': `Bearer ${authToken}`,
             'Content-Type': 'application/json'
@@ -81,9 +81,7 @@ function useUsers() {
         const result = await response.json();
         console.log('Users API response:', result);
 
-        if (Array.isArray(result)) {
-          setUsers(result);
-        } else if (result.data && Array.isArray(result.data)) {
+        if (result.success && Array.isArray(result.data)) {
           setUsers(result.data);
         } else {
           setError('Invalid response format');

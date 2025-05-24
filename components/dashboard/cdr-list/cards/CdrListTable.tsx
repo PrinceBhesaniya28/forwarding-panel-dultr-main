@@ -79,51 +79,20 @@ export default function CdrListTable(props: { refreshData: () => void }) {
   const recordsPerPage = 10;
 
   // Fetch caller location information
-  const fetchCallerLocation = async (phoneNumber: string) => {
-    if (!phoneNumber) {
-      console.warn('No phone number provided to fetchCallerLocation');
-      return 'Location Unknown';
-    }
-
+  const fetchCallerLocation = useCallback(async (phoneNumber: string) => {
+    // Check if we already have the location cached
     if (callerLocations[phoneNumber]) {
-      console.log('Using cached location for:', phoneNumber, callerLocations[phoneNumber]);
       return callerLocations[phoneNumber];
     }
-    
+
     try {
-      console.log('Fetching location for:', phoneNumber);
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-      
-      const response = await fetch(`/api/phone-location?phone=${phoneNumber}`, {
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        console.error('Location API error:', {
-          status: response.status,
-          statusText: response.statusText,
-          phoneNumber
-        });
-        setCallerLocations(prev => ({...prev, [phoneNumber]: 'Location Unknown'}));
-        return 'Location Unknown';
+      const result = await getWithAuth<{ location: string }>(`/api/location?phone=${phoneNumber}`);
+      if (result.success && result.data?.location) {
+        setCallerLocations(prev => ({...prev, [phoneNumber]: result.data.location}));
+        return result.data.location;
       }
       
-      const data = await response.json();
-      console.log('Location API response for', phoneNumber, ':', data);
-      
-      if (data && data.success) {
-        const location = data.city === 'Unknown' || data.region_code === 'Unknown'
-          ? 'Location Unknown'
-          : `${data.city.toUpperCase()}, ${data.region_code}`;
-        
-        console.log('Setting location for', phoneNumber, 'to:', location);
-        setCallerLocations(prev => ({...prev, [phoneNumber]: location}));
-        return location;
-      }
-      
-      console.warn('Invalid location data received for', phoneNumber, ':', data);
+      console.warn('Invalid location data received for', phoneNumber);
       setCallerLocations(prev => ({...prev, [phoneNumber]: 'Location Unknown'}));
       return 'Location Unknown';
     } catch (error) {
@@ -131,7 +100,7 @@ export default function CdrListTable(props: { refreshData: () => void }) {
       setCallerLocations(prev => ({...prev, [phoneNumber]: 'Location Unknown'}));
       return 'Location Unknown';
     }
-  };
+  }, [callerLocations]);
 
   // Fetch CDR records with filtering
   const fetchRecords = useCallback(
@@ -196,7 +165,7 @@ export default function CdrListTable(props: { refreshData: () => void }) {
         setIsLoading(false);
       }
     },
-    [searchParams, page, toast, recordsPerPage]
+    [searchParams, page, toast, recordsPerPage, fetchCallerLocation, props]
   );
 
   // Initial fetch

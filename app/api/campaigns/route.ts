@@ -70,7 +70,7 @@ export async function POST(request: Request) {
       targets: body.targets || [],
       type: body.type || 'roundrobin',
       status: body.status !== undefined ? body.status : true,
-      voipBehavior: body.voipBehavior !== undefined ? body.voipBehavior : true
+      voip: body.voip !== undefined ? body.voip : true
     };
 
     console.log('API Route - Received POST request for new campaign');
@@ -104,10 +104,6 @@ export async function POST(request: Request) {
     const result = await response.json();
     console.log('API Route - Backend response:', result);
 
-    if (!result.success) {
-      console.error('API Route - Backend returned unsuccessful response:', result);
-      throw new Error(result.message || 'Failed to create campaign');
-    }
 
     return NextResponse.json(result);
   } catch (error) {

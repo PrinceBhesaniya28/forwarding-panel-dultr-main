@@ -73,7 +73,7 @@ const BalanceWarning: React.FC<BalanceWarningProps> = ({
         audioRef.current.currentTime = 0;
       }
     };
-  }, [open, isPostpaid]);
+  }, [open, isPostpaid, balance]);
   
   // Format time remaining
   const formatTimeRemaining = () => {
@@ -137,7 +137,7 @@ const BalanceWarning: React.FC<BalanceWarningProps> = ({
         </AlertDialogHeader>
         <AlertDialogFooter className="gap-2">
           <AlertDialogCancel className="border-zinc-300">
-            I'll Do This Later
+            I&apos;ll Do This Later
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleAddFunds}
