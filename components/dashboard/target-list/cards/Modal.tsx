@@ -60,7 +60,7 @@ export type TargetRecord = {
   dialDuration: number;
   today?: number;
   status: number;
-  voipBehavior: boolean;
+  voip: boolean;
 };
 
 interface EditModalProps {
@@ -313,7 +313,7 @@ export function AddTargetModal({ isOpen, onClose, onAdd, campaigns }: AddTargetM
     concurrency: 6,
     dialDuration: 30,
     status: 1,
-    voipBehavior: true
+    voip: true
   });
 
   const handleAdd = () => {
@@ -339,7 +339,7 @@ export function AddTargetModal({ isOpen, onClose, onAdd, campaigns }: AddTargetM
       concurrency: 6,
       dialDuration: 30,
       status: 1,
-      voipBehavior: true
+      voip: true
     });
   };
 
@@ -450,13 +450,13 @@ export function AddTargetModal({ isOpen, onClose, onAdd, campaigns }: AddTargetM
             <div className="flex items-center space-x-2 pt-2">
               <Switch
                 id="voip-behavior"
-                checked={formData.voipBehavior}
+                checked={formData.voip}
                 onCheckedChange={(checked) =>
-                  setFormData({ ...formData, voipBehavior: checked })
+                  setFormData({ ...formData, voip: checked })
                 }
               />
               <label htmlFor="voip-behavior" className="text-sm font-medium">
-                {formData.voipBehavior ? 'Reject VoIP Calls' : 'Allow VoIP Calls'}
+                {formData.voip ? 'Reject VoIP Calls' : 'Allow VoIP Calls'}
               </label>
             </div>
           </div>
@@ -494,7 +494,7 @@ export function EditTargetModal({ target, onClose, onSave, campaigns }: EditTarg
     dialDuration: target?.dialDuration || 30,
     today: target?.today ? new Date(target.today).getTime() : undefined,
     status: target?.status || 1,
-    voipBehavior: target?.voipBehavior ?? true
+    voip: target?.voip ?? true
   });
 
   // Update form data when target changes
@@ -513,7 +513,7 @@ export function EditTargetModal({ target, onClose, onSave, campaigns }: EditTarg
         dialDuration: target.dialDuration || 30,
         today: target.today ? new Date(target.today).getTime() : undefined,
         status: target.status || 1,
-        voipBehavior: target.voipBehavior ?? true
+        voip: target.voip ?? true
       });
     }
   }, [target]);
@@ -530,7 +530,7 @@ export function EditTargetModal({ target, onClose, onSave, campaigns }: EditTarg
       id: target?.id, // Ensure ID is preserved
       today: target?.today ? new Date(target.today).getTime() : undefined,
       status: formData.status,
-      voipBehavior: formData.voipBehavior,
+      voip: formData.voip,
       campaignName: campaigns.find(c => c.id === formData.campaignId)?.name || target?.campaignName
     };
     
@@ -642,13 +642,13 @@ export function EditTargetModal({ target, onClose, onSave, campaigns }: EditTarg
             <div className="flex items-center space-x-2 pt-2">
               <Switch
                 id="edit-voip-behavior"
-                checked={formData.voipBehavior}
+                checked={formData.voip}
                 onCheckedChange={(checked) =>
-                  setFormData({ ...formData, voipBehavior: checked })
+                  setFormData({ ...formData, voip: checked })
                 }
               />
               <label htmlFor="edit-voip-behavior" className="text-sm font-medium">
-                {formData.voipBehavior ? 'Reject VoIP Calls' : 'Allow VoIP Calls'}
+                {formData.voip ? 'Reject VoIP Calls' : 'Allow VoIP Calls'}
               </label>
             </div>
           </div>

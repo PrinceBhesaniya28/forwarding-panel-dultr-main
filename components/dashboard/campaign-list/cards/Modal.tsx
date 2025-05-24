@@ -54,7 +54,7 @@ type Target = {
   priority: number;
   concurrency: number;
   id?: number;
-  voipBehavior: boolean;
+  voip: boolean;
 };
 
 type Campaign = {
@@ -66,7 +66,7 @@ type Campaign = {
   campaignId?: number;
   type: 'roundrobin' | 'dupe';
   status: boolean;
-  voipBehavior: boolean;
+  voip: boolean;
 };
 
 interface EditModalProps {
@@ -167,7 +167,7 @@ export function EditModal({ campaign, onClose, onSave }: EditModalProps) {
     dailyCapValue: 10,
     priority: 1,
     concurrency: 6,
-    voipBehavior: true
+    voip: true
   });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -252,7 +252,7 @@ export function EditModal({ campaign, onClose, onSave }: EditModalProps) {
       dailyCapValue: 10,
       priority: 1,
       concurrency: 6,
-      voipBehavior: true
+      voip: true
     });
   };
 
@@ -464,21 +464,21 @@ export function EditModal({ campaign, onClose, onSave }: EditModalProps) {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <label htmlFor="voipBehavior" className="text-sm font-medium">
+                <label htmlFor="voip" className="text-sm font-medium">
                   VoIP Behavior
                 </label>
                 <div className="flex items-center space-x-2 pt-2">
                   <Switch
-                    id="voipBehavior"
-                    checked={formData?.voipBehavior ?? true}
+                    id="voip"
+                    checked={formData?.voip ?? true}
                     onCheckedChange={(checked) =>
                       setFormData(
-                        formData ? { ...formData, voipBehavior: checked } : null
+                        formData ? { ...formData, voip: checked } : null
                       )
                     }
                   />
-                  <label htmlFor="voipBehavior" className="text-sm font-medium">
-                    {formData?.voipBehavior ? 'Reject VoIP Calls' : 'Allow VoIP Calls'}
+                  <label htmlFor="voip" className="text-sm font-medium">
+                    {formData?.voip ? 'Reject VoIP Calls' : 'Allow VoIP Calls'}
                   </label>
                 </div>
               </div>
@@ -595,13 +595,13 @@ export function EditModal({ campaign, onClose, onSave }: EditModalProps) {
                   <div className="flex items-center space-x-2 pt-2">
                     <Switch
                       id="voip-behavior"
-                      checked={targetFormData.voipBehavior}
+                      checked={targetFormData.voip}
                       onCheckedChange={(checked) =>
-                        setTargetFormData({ ...targetFormData, voipBehavior: checked })
+                        setTargetFormData({ ...targetFormData, voip: checked })
                       }
                     />
                     <label htmlFor="voip-behavior" className="text-sm font-medium">
-                      {targetFormData.voipBehavior ? 'Reject VoIP Calls' : 'Allow VoIP Calls'}
+                      {targetFormData.voip ? 'Reject VoIP Calls' : 'Allow VoIP Calls'}
                     </label>
                   </div>
                 </div>
@@ -716,7 +716,7 @@ export function CreateModal({ isOpen, onClose, onCreate }: CreateModalProps) {
     targets: [],
     type: 'roundrobin',
     status: true,
-    voipBehavior: true
+    voip: true
   });
   const [users, setUsers] = useState<User[]>([]);
   const { phoneNumbers, loading: phoneNumbersLoading, error: phoneNumbersError } = usePhoneNumbers();
@@ -727,7 +727,7 @@ export function CreateModal({ isOpen, onClose, onCreate }: CreateModalProps) {
     dailyCapValue: 10,
     priority: 1,
     concurrency: 6,
-    voipBehavior: true
+    voip: true
   });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -742,7 +742,7 @@ export function CreateModal({ isOpen, onClose, onCreate }: CreateModalProps) {
         targets: [],
         type: 'roundrobin',
         status: true,
-        voipBehavior: true
+        voip: true
       });
     }
   }, [isOpen]);
@@ -821,7 +821,7 @@ export function CreateModal({ isOpen, onClose, onCreate }: CreateModalProps) {
       dailyCapValue: 10,
       priority: 1,
       concurrency: 6,
-      voipBehavior: true
+      voip: true
     });
   };
 
@@ -1042,22 +1042,22 @@ export function CreateModal({ isOpen, onClose, onCreate }: CreateModalProps) {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <label htmlFor="create-voipBehavior" className="text-sm font-medium">
+                <label htmlFor="create-voip" className="text-sm font-medium">
                   VoIP Behavior
                 </label>
                 <div className="flex items-center space-x-2 pt-2">
                   <Switch
-                    id="create-voipBehavior"
-                    checked={formData.voipBehavior}
+                    id="create-voip"
+                    checked={formData.voip}
                     onCheckedChange={(checked) =>
-                      setFormData({ ...formData, voipBehavior: checked })
+                      setFormData({ ...formData, voip: checked })
                     }
                   />
                   <label
-                    htmlFor="create-voipBehavior"
+                    htmlFor="create-voip"
                     className="text-sm font-medium"
                   >
-                    {formData.voipBehavior ? 'Reject VoIP Calls' : 'Allow VoIP Calls'}
+                    {formData.voip ? 'Reject VoIP Calls' : 'Allow VoIP Calls'}
                   </label>
                 </div>
               </div>
@@ -1170,13 +1170,13 @@ export function CreateModal({ isOpen, onClose, onCreate }: CreateModalProps) {
                   <div className="flex items-center space-x-2 pt-2">
                     <Switch
                       id="voip-behavior"
-                      checked={targetFormData.voipBehavior}
+                      checked={targetFormData.voip}
                       onCheckedChange={(checked) =>
-                        setTargetFormData({ ...targetFormData, voipBehavior: checked })
+                        setTargetFormData({ ...targetFormData, voip: checked })
                       }
                     />
                     <label htmlFor="voip-behavior" className="text-sm font-medium">
-                      {targetFormData.voipBehavior ? 'Reject VoIP Calls' : 'Allow VoIP Calls'}
+                      {targetFormData.voip ? 'Reject VoIP Calls' : 'Allow VoIP Calls'}
                     </label>
                   </div>
                 </div>

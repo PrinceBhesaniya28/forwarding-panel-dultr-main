@@ -508,11 +508,11 @@ export default function TargetListTable(props: { refreshData: () => void }) {
                     </TableCell>
                     <TableCell className="w-max border-b-[1px] border-zinc-200 py-5 pl-5 pr-4 dark:border-white/10">
                       <span className={`py-1 px-2 rounded-full text-xs font-medium ${
-                        target.voipBehavior === 'reject' 
+                        target.voip === 'reject' 
                           ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                           : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                       }`}>
-                        {target.voipBehavior === 'reject' ? 'Reject Calls' : 'Accept Calls'}
+                        {target.voip === 'reject' ? 'Reject Calls' : 'Accept Calls'}
                       </span>
                     </TableCell>
                     <TableCell className="w-max border-b-[1px] border-zinc-200 py-5 pl-5 pr-4 dark:border-white/10">

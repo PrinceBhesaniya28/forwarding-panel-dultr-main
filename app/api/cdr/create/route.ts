@@ -119,7 +119,7 @@ export async function POST(request: Request) {
         const campaigns = await fetchCampaignsWithRetry(token);
 
         // Find VOIP-specific campaign
-        const voipCampaign = campaigns.find((campaign: any) => campaign.voipBehavior === true);
+        const voipCampaign = campaigns.find((campaign: any) => campaign.voip === true);
 
         if (voipCampaign) {
           // Get masked number for VOIP call
