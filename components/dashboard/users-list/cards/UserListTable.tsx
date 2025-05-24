@@ -24,6 +24,7 @@ type User = {
   trunk?: string;
   status: boolean;
   balance: number;
+  country: string;
 };
 
 function UserListTable(props: { refreshData: () => void }) {
@@ -97,7 +98,8 @@ function UserListTable(props: { refreshData: () => void }) {
           password: user.password,
           role: user.role,
           trunk: user.trunk,
-          status: user.status
+          status: user.status,
+          country: user.country
         })
       });
 
@@ -184,7 +186,8 @@ function UserListTable(props: { refreshData: () => void }) {
           password: newUser.password,
           role: newUser.role,
           trunk: newUser.trunk,
-          status: newUser.status
+          status: newUser.status,
+          country: newUser.country
         })
       });
 

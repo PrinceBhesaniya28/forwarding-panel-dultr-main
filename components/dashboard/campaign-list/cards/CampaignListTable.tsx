@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { HiPencil, HiTrash, HiPlus, HiMagnifyingGlass } from 'react-icons/hi2';
 import { EditModal, DeleteModal, CreateModal } from './Modal';
 import { getWithAuth } from '@/utils/api-helpers';
@@ -49,8 +49,7 @@ function CampaignListTable(props: { refreshData: () => void }) {
   const [currentPage, setCurrentPage] = useState(0);
   const campaignsPerPage = 6;
 
-
-  const fetchCampaigns = async () => {
+  const fetchCampaigns = useCallback(async () => {
     setIsLoading(true);
     try {
       const result = await getWithAuth<Campaign[]>('/api/campaigns');
@@ -78,12 +77,12 @@ function CampaignListTable(props: { refreshData: () => void }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   // Fetch campaigns
   useEffect(() => {
     fetchCampaigns();
-  }, []);
+  }, [fetchCampaigns]);
 
   const handleSaveEdit = async (campaign: Campaign) => {
     try {

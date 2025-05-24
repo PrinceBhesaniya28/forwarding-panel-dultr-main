@@ -14,7 +14,7 @@ import { getRedirectMethod } from '@/utils/auth-helpers/settings';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState, useCallback } from 'react';
 import { FiAlignJustify } from 'react-icons/fi';
 import {
   HiOutlineArrowRightOnRectangle,
@@ -54,8 +54,45 @@ export default function HeaderLinks() {
     setOpen(!open);
   };
 
+  // Function to perform logout
+  const performLogout = useCallback(async () => {
+    console.log('Logging out due to inactive account status');
+
+    // Clear all auth data
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('userData');
+    localStorage.removeItem('userRole');
+
+    // Clear all cookies
+    document.cookie.split(';').forEach(function (c) {
+      document.cookie = c
+        .replace(/^ +/, '')
+        .replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/');
+    });
+
+    // Close SSE connection if open
+    if (eventSource) {
+      eventSource.close();
+    }
+
+    // Show toast notification
+    toast({
+      title: 'Session ended',
+      description:
+        'Your account has been deactivated. Please contact an administrator.',
+      variant: 'destructive'
+    });
+
+    // Redirect to login page
+    if (shouldUseRouter) {
+      router.push('/dashboard/signin');
+    } else {
+      window.location.href = '/dashboard/signin';
+    }
+  }, [eventSource, shouldUseRouter, router, toast]);
+
   // Function to check if balance is low or negative
-  const checkBalanceStatus = (balance: number) => {
+  const checkBalanceStatus = useCallback((balance: number) => {
     // Check if balance is negative (postpaid mode)
     if (balance < 0) {
       // Check if balance is below postpaid limit
@@ -114,44 +151,7 @@ export default function HeaderLinks() {
     
     // Balance is sufficient
     return 'OK';
-  };
-
-  // Function to perform logout
-  const performLogout = async () => {
-    console.log('Logging out due to inactive account status');
-
-    // Clear all auth data
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('userData');
-    localStorage.removeItem('userRole');
-
-    // Clear all cookies
-    document.cookie.split(';').forEach(function (c) {
-      document.cookie = c
-        .replace(/^ +/, '')
-        .replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/');
-    });
-
-    // Close SSE connection if open
-    if (eventSource) {
-      eventSource.close();
-    }
-
-    // Show toast notification
-    toast({
-      title: 'Session ended',
-      description:
-        'Your account has been deactivated. Please contact an administrator.',
-      variant: 'destructive'
-    });
-
-    // Redirect to login page
-    if (shouldUseRouter) {
-      router.push('/dashboard/signin');
-    } else {
-      window.location.href = '/dashboard/signin';
-    }
-  };
+  }, [minuteRate, theme, toast, performLogout]);
 
   // Set up SSE connection for balance updates
   useEffect(() => {
@@ -285,7 +285,7 @@ export default function HeaderLinks() {
         es.close();
       }
     };
-  }, [router, shouldUseRouter, toast]);
+  }, [checkBalanceStatus, performLogout]);
 
   // Handle closing the balance warning
   const handleCloseBalanceWarning = () => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -101,7 +101,7 @@ export default function AdvancedReportingTable() {
   };
 
   // Fetch call records (now only for today, midnight to midnight)
-  const fetchRecords = async () => {
+  const fetchRecords = useCallback(async () => {
     setIsLoading(true);
     try {
       // Get auth token from localStorage
@@ -110,21 +110,13 @@ export default function AdvancedReportingTable() {
         throw new Error('No authentication token found');
       }
 
-      // Get today date range (midnight to midnight)
-      const { startDate, endDate } = getTodayDateRange();
-      console.log('Fetching CDRs from', startDate, 'to', endDate); // DEBUG
-      const query = new URLSearchParams();
-      query.append('startDate', startDate);
-      query.append('endDate', endDate);
-      query.append('limit', '10000');
-
-      // Fetch only today's records (midnight to midnight)
-      const response = await fetch(`/api/cdr?${query.toString()}`, {
+      // Fetch records with pagination
+      const response = await fetch(`/api/cdr?limit=${recordsPerPage}&offset=${(page - 1) * recordsPerPage}`, {
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json'
         },
-        cache: 'no-store' // Ensure we don't cache the response
+        cache: 'no-store'
       });
 
       if (!response.ok) {
@@ -132,36 +124,12 @@ export default function AdvancedReportingTable() {
       }
 
       const result = await response.json();
-      console.log('CDR API response:', result); // DEBUG
+      console.log('CDR API response:', result);
 
       if (result.success) {
-        console.log('Successfully fetched records:', result.data?.length || 0); // DEBUG
         setRecords(result.data || []);
-        setTotalPages(Math.ceil((result.data?.length || 0) / recordsPerPage));
-        
-        // Then fetch locations in the background
-        if (result.data && result.data.length > 0) {
-          console.log('Starting background location fetches...');
-          // Process records in batches to avoid overwhelming the API
-          const batchSize = 5;
-          for (let i = 0; i < result.data.length; i += batchSize) {
-            const batch = result.data.slice(i, i + batchSize);
-            await Promise.all(
-              batch.map(async (record) => {
-                if (record.src && !locationCache[record.src]) {
-                  const location = await fetchLocation(record.src);
-                  setRecords(prevRecords => 
-                    prevRecords.map(r => 
-                      r.src === record.src ? { ...r, callerLocation: location } : r
-                    )
-                  );
-                }
-              })
-            );
-          }
-        }
+        setTotalPages(Math.ceil(result.total / recordsPerPage));
       } else {
-        console.error('CDR API returned error:', result.message);
         throw new Error(result.message || 'Failed to fetch records');
       }
     } catch (error) {
@@ -176,11 +144,11 @@ export default function AdvancedReportingTable() {
       console.log('Setting isLoading to false');
       setIsLoading(false);
     }
-  };
+  }, [page, recordsPerPage, toast]);
 
   useEffect(() => {
     fetchRecords();
-  }, []);
+  }, [fetchRecords]);
 
   // Filter records based on search query
   const filterRecords = (query: string) => {
